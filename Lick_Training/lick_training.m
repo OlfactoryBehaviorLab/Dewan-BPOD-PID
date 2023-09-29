@@ -2,7 +2,7 @@
 %% Adapted from Dewan Lab Lick Training Voyeur Protocol
 %% Austin Pauley, 2023
 
-%#ok<*NASGU,*STRNU,*DEFNU,*INUSD,*NUSED> 
+%#ok<*NASGU,*STRNU,*DEFNU,*INUSD,*NUSED,*GVMIS> 
 
 function lick_training % Protocol Name
 global BpodSystem % BPOD System Variable
@@ -16,11 +16,15 @@ FINAL_VALVE = 'Valve1';
 WATER_SOLENOID = 'Valve2';
 LED = 'PWM1';
 
+
+
 correct_attempts = 0;
 
 % Settings go here
 settings_struct = BpodSystem.ProtocolSettings; % Load settings from file
-if isempty(fieldnames(settings_struct)) % If the settings file doesn't exist, load some default params
+
+
+if isempty(settings_struct) % If the settings file doesn't exist, load some default params
     disp('No settings file found, loading default values!')
     % User Configurables
     settings_struct.GUI.FV_state = 1; % 1 = ON, 2 = OFF
@@ -42,9 +46,11 @@ if isempty(fieldnames(settings_struct)) % If the settings file doesn't exist, lo
 
     % Statistics
     settings_struct.GUI.CurrentTrial = 1;
-    settings_struct.GUI.Performance = 0;
-    settings_struct.GUI.TotalWater = 0;
+    settings_struct.GUI.CorrectTrials = 0;
+    settings_struct.GUI.Performance = '0%';
+    settings_struct.GUI.TotalWater = '0uL';
     settings_struct.GUIMeta.CurrentTrial.Style = 'text';
+    settings_struct.GUIMeta.CorrectTrials.Style = 'text';
     settings_struct.GUIMeta.Performance.Style = 'text';
     settings_struct.GUIMeta.TotalWater.Style = 'text';
 
@@ -64,7 +70,7 @@ if isempty(fieldnames(settings_struct)) % If the settings file doesn't exist, lo
     settings_struct.GUIPanels.Configurables = {'FV_state', 'trial_type', 'number_of_trials', 'water_volume'};
     settings_struct.GUIPanels.Static_Settings = {'ITI_seconds', 'FV_duration_seconds'};
     settings_struct.GUIPanels.Controls = {'start_training', 'pause_training'};
-    settings_struct.GUIPanels.Statistics = {'CurrentTrial', 'Performance', 'TotalWater'};
+    settings_struct.GUIPanels.Statistics = {'CurrentTrial', 'CorrectTrials', 'Performance', 'TotalWater'};
     
 
     
@@ -93,10 +99,11 @@ for current_trial = 1:settings_struct.GUI.number_of_trials % Loop through all tr
 
     % Update settings GUI
     settings_struct.GUI.CurrentTrial = current_trial;
-    performance = (correct_attempts/current_trial) * 100;
+    settings_struct.GUI.CorrectTrials = correct_attempts;
+    performance = append(num2str((correct_attempts/current_trial) * 100), '%');
     settings_struct.GUI.Performance = performance;
-    total_water = correct_attempts * settings_struct.GUI.water_volume;
-    settings_struct.GUI.TotalWater = total_water; 
+    total_water = num2str(correct_attempts * settings_struct.GUI.water_volume);
+    settings_struct.GUI.TotalWater = append(total_water, 'uL'); 
     BpodParameterGUI('sync', settings_struct); % Update GUI
 
 
@@ -126,7 +133,7 @@ for current_trial = 1:settings_struct.GUI.number_of_trials % Loop through all tr
     trial_data = RunStateMatrix; % Get return data
 
     if ismember(2, trial_data.States)   % Good job buddy; if the animal licks correctly, trial 2 will be present in this list, if it isn't then only 1,3 is present
-        BpodSystem.Data.CorrectAttempts(current_trial) = 1; % Mark this trial as successful in the experiment data file
+        BpodSystem.Data.trial_result(current_trial) = 1; % Mark this trial as successful in the experiment data file
         correct_attempts = correct_attempts + 1; % Local counter for live statistics
     else
         BpodSystem.Data.CorrectAttempts(current_trial) = 0; % mark this trial as unsucessful if the animal didn't lick

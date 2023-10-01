@@ -137,6 +137,73 @@ function pid_startup_gui
             x10_edit_field.FontSize = 12;
             x10_edit_field.Position = [X10_EDIT_POSITION CAL_PANEL_THIRDS*3 60 22];
 
+            BUTTON_WIDTH = 80;
+            BUTTON_POSITION = WINDOW_WIDTH/2 - BUTTON_WIDTH/2;
+            submit_button = uibutton(gui);
+            submit_button.Text = 'SUBMIT';
+            submit_button.FontName = 'Arial';
+            submit_button.FontSize = 18;
+            submit_button.FontWeight = 'bold';
+            submit_button.Position = [BUTTON_POSITION 30 BUTTON_WIDTH 30];
+            submit_button.ButtonPushedFcn = @submit_callback;
+
             gui.Visible = 'on';
+
+
+function submit_callback(app, event)
+
+name = name_edit_field.Value;
+odor = odor_edit_field.Value;
+x1 = x1_edit_field.Value;
+x5 = x5_edit_field.Value;
+x10 = x10_edit_field.Value;
+
+validate_input(name, odor, x1, x5, x10);
+
+end
+    
+function valid = validate_input(name, odor, x1, x5, x10)
+    RED = [1 0 0];
+    BLACK = [0 0 0];
+    error = false;
+    disp(isletter(name))
+
+    if isempty(name) & sum(isletter(name)) == 0
+        name_label.FontColor = RED;
+        error = true;
+    else
+        name_label.FontColor = BLACK;
+    end
+
+    if isempty(odor)
+        odor_label.FontColor = RED;
+        error=true;
+    else
+        odor_label.FontColor = BLACK;
+    end
+
+    if isempty(x1)
+        x1_label.FontColor = RED;
+        error=true;
+    else
+        x1_label.FontColor = BLACK;
+    end
+
+    if isempty(x5)
+        x5_label.FontColor = RED;
+        error=true;
+    else
+        x5_label.FontColor = BLACK;
+    end
+
+    if isempty(x10)
+        x10_label.FontColor = RED;
+        error=true;
+    else
+        x10_label.FontColor = BLACK;
+    end
+
+end
     
 end
+

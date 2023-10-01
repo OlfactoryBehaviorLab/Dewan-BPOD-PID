@@ -5,22 +5,23 @@
 %#ok<*NASGU,*STRNU,*DEFNU,*INUSD,*NUSED,*GVMIS> 
 
 function lick_training % Protocol Name
-global BpodSystem % BPOD System Variable
+global BpodSystem % BPOD System Variable; it's okay to ignore the error about global objects
 
 % Some definitions
 LEFT = 1;
 RIGHT = 2;
 BOTH = 3; 
 
-FINAL_VALVE = 'Valve1';
-WATER_SOLENOID = 'Valve2';
-LED = 'PWM1';
+FINAL_VALVE = 'Valve1'; % Final valve is connected to the valve lines for behavior port 1
+WATER_SOLENOID = 'Valve2'; % The water solenoid is connected to the valve lines for behavior port 2
+LED = 'PWM1'; % The LED is connected to the LED lines for behavior port 1; values from 0-255
 
 
 
 correct_attempts = 0;
 
 % Settings go here
+settings_struct = struct;
 settings_struct = BpodSystem.ProtocolSettings; % Load settings from file
 
 

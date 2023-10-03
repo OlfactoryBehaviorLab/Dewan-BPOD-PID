@@ -16,8 +16,6 @@ FINAL_VALVE = 'Valve1'; % Final valve is connected to the valve lines for behavi
 WATER_SOLENOID = 'Valve2'; % The water solenoid is connected to the valve lines for behavior port 2
 LED = 'PWM1'; % The LED is connected to the LED lines for behavior port 1; values from 0-255
 
-
-
 correct_attempts = 0;
 
 % Settings go here
@@ -30,9 +28,11 @@ if isempty(settings_struct) % If the settings file doesn't exist, load some defa
     % User Configurables
     settings_struct.GUI.FV_state = 1; % 1 = ON, 2 = OFF
     settings_struct.GUI.trial_type = LEFT; % Trial Types: 1 = LEFT, 2 = RIGHT, 3 = both
+    settings_struct.GUI.ITI_seconds = 2;
     settings_struct.GUI.number_of_trials = 200;
     settings_struct.GUI.water_volume = 1.5; %uL
     settings_struct.GUIMeta.water_volume.Style = 'edit';
+    seetings_struct.GUIMEta.ITI_seconds.Style = 'edit';
     settings_struct.GUIMeta.FV_state.Style = 'popupmenu';
     settings_struct.GUIMeta.FV_state.String = {'ON', 'OFF'};
     settings_struct.GUIMeta.trial_type.Style = 'popupmenu';
@@ -57,19 +57,16 @@ if isempty(settings_struct) % If the settings file doesn't exist, load some defa
 
 
     % Static Settings
-    settings_struct.GUI.ITI_seconds = 2;
     settings_struct.GUI.FV_duration_seconds = 2;
-    settings_struct.GUIMeta.ITI_seconds.Style = 'text';
     settings_struct.GUIMeta.FV_duration_seconds.Style = 'text';
-    settings_struct.grace_period = 0;
 
     % Reward Settings
     settings_struct.water_solenoid_duration = 0;
     settings_struct.water_solenoid_duration_2 = 0;
 
     % Panels
-    settings_struct.GUIPanels.Configurables = {'FV_state', 'trial_type', 'number_of_trials', 'water_volume'};
-    settings_struct.GUIPanels.Static_Settings = {'ITI_seconds', 'FV_duration_seconds'};
+    settings_struct.GUIPanels.Configurables = {'FV_state', 'trial_type','ITI_seconds',  'number_of_trials', 'water_volume'};
+    settings_struct.GUIPanels.Static_Settings = {'FV_duration_seconds'};
     settings_struct.GUIPanels.Controls = {'start_training', 'pause_training'};
     settings_struct.GUIPanels.Statistics = {'CurrentTrial', 'CorrectTrials', 'Performance', 'TotalWater'};
     
@@ -137,7 +134,7 @@ for current_trial = 1:settings_struct.GUI.number_of_trials % Loop through all tr
         BpodSystem.Data.trial_result(current_trial) = 1; % Mark this trial as successful in the experiment data file
         correct_attempts = correct_attempts + 1; % Local counter for live statistics
     else
-        BpodSystem.Data.CorrectAttempts(current_trial) = 0; % mark this trial as unsucessful if the animal didn't lick
+        BpodSystem.Data.trial_result(current_trial) = 0; % mark this trial as unsucessful if the animal didn't lick
     end
         
     BpodSystem.Data = AddTrialEvents(BpodSystem.Data, trial_data); % Add the returned data to the global data store

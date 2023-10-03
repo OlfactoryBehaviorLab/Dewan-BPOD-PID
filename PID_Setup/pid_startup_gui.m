@@ -12,7 +12,7 @@ function pid_startup_gui
             gui.Resize = 'off';
 
             main_panel = uipanel(gui);
-            main_panel.BorderWidth = 2;
+            % main_panel.BorderWidth = 2;
             main_panel.TitlePosition = 'centertop';
             main_panel.Title = 'Dewan Lab PID Configurator';
             main_panel.FontName = 'Arial';
@@ -85,7 +85,7 @@ function pid_startup_gui
             odor_edit_field.Position = [ODOR_EDIT_POSITION MAIN_PANEL_THIRDS-OFFSET ODOR_EDIT_LENGTH 22];
 
             calibration_panel = uipanel(gui);
-            calibration_panel.BorderWidth = 2;
+            %calibration_panel.BorderWidth = 2;
             calibration_panel.TitlePosition = 'centertop';
             calibration_panel.Title = 'Current Calibration Values';
             calibration_panel.FontName = 'Arial';
@@ -104,7 +104,7 @@ function pid_startup_gui
             x1_label.Text = '1x: ';
 
             X1_EDIT_POSITION = x1_label.Position(1) + x1_label.Position(3) + 10;
-            x1_edit_field = uieditfield(calibration_panel, 'text');
+            x1_edit_field = uieditfield(calibration_panel, 'numeric', 'Limits', [0 100]);
             x1_edit_field.FontName = 'Arial';
             x1_edit_field.FontSize = 12;
             x1_edit_field.Position = [X1_EDIT_POSITION CAL_PANEL_THIRDS*3 60 22];
@@ -117,7 +117,7 @@ function pid_startup_gui
             x5_label.Text = '5x: ';
 
             X5_EDIT_POSITION = x5_label.Position(1) + x5_label.Position(3) + 10;
-            x5_edit_field = uieditfield(calibration_panel, 'text');
+            x5_edit_field = uieditfield(calibration_panel, 'numeric', 'Limits', [0 100]);
             x5_edit_field.FontName = 'Arial';
             x5_edit_field.FontSize = 12;
             x5_edit_field.Position = [X5_EDIT_POSITION CAL_PANEL_THIRDS*3 60 22];
@@ -132,11 +132,11 @@ function pid_startup_gui
 
             % Create OdorNameEditField
             X10_EDIT_POSITION = x10_label.Position(1) + x10_label.Position(3) + 10;
-            x10_edit_field = uieditfield(calibration_panel, 'text');
+            x10_edit_field = uieditfield(calibration_panel, 'numeric', 'Limits', [0 100]);
             x10_edit_field.FontName = 'Arial';
             x10_edit_field.FontSize = 12;
             x10_edit_field.Position = [X10_EDIT_POSITION CAL_PANEL_THIRDS*3 60 22];
-
+      
             BUTTON_WIDTH = 80;
             BUTTON_POSITION = WINDOW_WIDTH/2 - BUTTON_WIDTH/2;
             submit_button = uibutton(gui);
@@ -166,9 +166,8 @@ function valid = validate_input(name, odor, x1, x5, x10)
     RED = [1 0 0];
     BLACK = [0 0 0];
     error = false;
-    disp(isletter(name))
 
-    if isempty(name) & sum(isletter(name)) == 0
+    if isempty(name)
         name_label.FontColor = RED;
         error = true;
     else
@@ -182,21 +181,21 @@ function valid = validate_input(name, odor, x1, x5, x10)
         odor_label.FontColor = BLACK;
     end
 
-    if isempty(x1)
+    if x1 == 0
         x1_label.FontColor = RED;
         error=true;
     else
         x1_label.FontColor = BLACK;
     end
 
-    if isempty(x5)
+    if x5 == 0
         x5_label.FontColor = RED;
         error=true;
     else
         x5_label.FontColor = BLACK;
     end
 
-    if isempty(x10)
+    if x10 == 0
         x10_label.FontColor = RED;
         error=true;
     else

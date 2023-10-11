@@ -2,21 +2,21 @@
 function dewan_PID_protocol
 global BpodSystem;
 trial_manager = BpodTrialManager;
+is_streaming = 0;
 % analog_in = setup_analog_input('COM9');
 % analog_in.scope();
 
-% if isempty(analog_in)
-%     disp("Error connecting to analog input module!")
-%     return
-% end
+if isempty(analog_in)
+    return
+end
 
-success = LoadSerialMessages('ValveModule1', {['B' 48], ['B' 192] ['O' 1], ['B' 0]}); 
+success = LoadSerialMessages('ValveModule1', {['B' 48], ['B' 192], ['O' 1], ['B' 0]}); 
 % 1. B48 = 00110000; Valve 6 & 5 ON; Odor Vial On
-% 2. O1 = FV ON
-% 3. B0 = 00000000; All OFF
-% 4. B192 = 11000000; Valve 7 & 8 ON; Solvent Vial On
+% 2. B192 = 11000000; Valve 7 & 8 ON; Solvent Vial On
+% 3. O1 = FV ON
+% 4. B0 = 00000000; All OFF
 if success ~= 1
-    disp("Error connecting to the valve driver module!")
+    disp("Error sending commands to the valve driver module!")
     return
 end
 
@@ -25,18 +25,6 @@ end
 
 main_gui = pid_main_gui("PID"); % Launch Main GUI, no need to wait
 
-for i = 0:10
-    main_gui.update_voltage(i)
-end
-
-for j = 10:-1:0
-    main_gui.update_voltage(j)
-end
-
-
-disp("test");
-
-end
 
 function sma = generate_state_machine(BpodSystem, Settings)
     sma = NewStateMatrix();
@@ -65,6 +53,7 @@ function sma = generate_state_machine(BpodSystem, Settings)
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'ValveModule1', 4}); % Close everything
         case 'CAL'
         case 'KIN'
+            % Stuff goes here later
         
 
     end
@@ -74,11 +63,67 @@ function generate_experiment_parameters(BpodSystem, Settings)
 
 end
 
-function analog_in = setup_analog_input(COM)
-    analog_in = BpodAnalogIn(COM);
-    analog_in.InputRange(1) = {"0V:10V"};
-    analog_in.nActiveChannels = 1;
-    analog_in.Thresholds(1) = 10;
-    analog_in.ResetVoltages(1) = 9.95;
-    analog_in.SMeventsEnabled(1) = 1;
+function a_in = setup_analog_input(COM)
+    try
+        a_in = BpodAnalogIn(COM);
+    catch
+        a_in = [];
+        disp('Error connecting to analog input on COM: %s', string(COM));
+    end
+    a_in.InputRange(1) = {"0V:10V"};
+    a_in.nActiveChannels = 1;
+    a_in.Thresholds(1) = 10;
+    a_in.ResetVoltages(1) = 9.95;
+    a_in.SMeventsEnabled(1) = 1;
+    a_in.Stream2USB(1) = 1;
+    a_in.startModuleStream();
+    a_in.startReportingEvents();
+    a_in.startUSBStream();
+    is_streaming = 1;
+
+end
+
+function stop_streaming(a_in)
+    is_streaming = 0;
+    a_in.stopModuleStream();
+    a_in.stopReportingEvents();
+    a_in.stopUSBStream();
+end
+
+function start_streaming(a_in)
+    a_in.startModuleStream();
+    a_in.startReportingEvents();
+    a_in.startUSBStream();
+    is_streaming = 1;
+end
+
+function stream_analog_data(a_in)
+    % Adapted from BpodAnalogIn updatePlot function
+    % Copyright (C) 2023 Sanworks LLC, Rochester, New York, USA
+    % Modified and redistributed under GNU General Public License v3
+
+    if is_streaming == 0
+        fprintf('Error, the Analog input module is not streaming data!');
+        return
+    end
+
+    num_bytes_to_read = a_in.bytesAvailable;
+    num_bytes_per_frame = 4; % num frames (1) * 2 + 2
+
+    if num_bytes_to_read > num_bytes_per_frame
+        number_of_bytes_to_read = floor(num_bytes_to_read/num_bytes_per_frame) * num_bytes_per_frame; % Depending on sampling rate, there may be multiple bytes to read
+        data = a_in.read(number_of_bytes_to_read, 'uint8'); % Read in the data
+        data_prefix = data(1); % The first byte should be an identifier prefix
+
+        if data_prefix == 'R' || data_prefix == '#' % R is raw data, # is sync events
+            prefixes = data(1:num_bytes_per_frame:end); % Looks every 4 bytes for prefixes
+            [~, prefix_indexes] = intersect(prefixes, data, 'stable'); % Get the indexes for each prefix
+            data(prefix_indexes) = []; % Remove prefixes from the data stream
+            
+        end
+    end
+        
+
+    end
+
 end

@@ -5,7 +5,7 @@ trial_manager = BpodTrialManager;
 is_streaming = 0;
 % analog_in = setup_analog_input('COM9');
 % analog_in.scope();
-
+% native 2 unicode to convert from dec -> ascii
 if isempty(analog_in)
     return
 end
@@ -119,7 +119,14 @@ function stream_analog_data(a_in)
             prefixes = data(1:num_bytes_per_frame:end); % Looks every 4 bytes for prefixes
             [~, prefix_indexes] = intersect(prefixes, data, 'stable'); % Get the indexes for each prefix
             data(prefix_indexes) = []; % Remove prefixes from the data stream
-            
+            sync_signals = data(1:num_bytes_per_frame-1:end);
+            [~, sync_indexes] = intersect(sync_signals, data, 'stable');
+            data(sync_indexes) = [];
+
+            data_samples = typecast(data(1:end), 'uint16');
+            num_data_samples = length(data_samples);
+
+            num_sync_events = length(prefix_indexes);
         end
     end
         

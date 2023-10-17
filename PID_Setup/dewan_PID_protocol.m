@@ -110,26 +110,63 @@ function stream_analog_data(a_in)
     num_bytes_to_read = a_in.bytesAvailable;
     num_bytes_per_frame = 4; % num frames (1) * 2 + 2
 
-    if num_bytes_to_read > num_bytes_per_frame
+    if num_bytes_to_read > num_bytes_per_frame % Are there at least 4 bytes (1 frame) available to read?
         number_of_bytes_to_read = floor(num_bytes_to_read/num_bytes_per_frame) * num_bytes_per_frame; % Depending on sampling rate, there may be multiple bytes to read
-        data = a_in.read(number_of_bytes_to_read, 'uint8'); % Read in the data
+        data = a_in.Port.read(number_of_bytes_to_read, 'uint8'); % Read in the data
         data_prefix = data(1); % The first byte should be an identifier prefix
 
         if data_prefix == 'R' || data_prefix == '#' % R is raw data, # is sync events
             prefixes = data(1:num_bytes_per_frame:end); % Looks every 4 bytes for prefixes
-            [~, prefix_indexes] = intersect(prefixes, data, 'stable'); % Get the indexes for each prefix
-            data(prefix_indexes) = []; % Remove prefixes from the data stream
-            sync_signals = data(1:num_bytes_per_frame-1:end);
-            [~, sync_indexes] = intersect(sync_signals, data, 'stable');
-            data(sync_indexes) = [];
+            data(1:num_bytes_per_frame:end) = []; % Remove prefixes from the data stream
+            sync_signals = data(1:num_bytes_per_frame-1:end); % Sync byte is now every third byte in frame (originally the second byte)
+            data(1:num_bytes_per_frame-1:end) = []; % Remove the sync data from the data stream
 
-            data_samples = typecast(data(1:end), 'uint16');
-            num_data_samples = length(data_samples);
+            data_samples = typecast(data(1:end), 'uint16'); % Cast all the data to ints
+            num_data_samples = length(data_samples); % Get the number of samples
 
-            num_sync_events = length(prefix_indexes);
+            sync_prefixes = (prefixes == '#'); % Look and see if any of the frames received are for sync events
+            num_sync_events = sum(sync_prefixes); % Number of sync events present
+            sync_prefixes_index = find(sync_prefixes); % Get sync events indexes
+           
+            data_samples_volts = bits2volts(a_in, data_samples); % Convert raw signal in bits to volts
+
+            if a_in.USBstream2File % If streaming to USB
+                data_to_write(1, :) = data_samples; %  raw bits
+                data_to_write(2, :) = data_samples_volts; % volts
+                a_in.USBStreamFile.Samples(1, a_in.USBFile_SamplePos:a_in.USBFile_SamplePos+num_data_samples-1) = data_to_write; % Save the data to the USB; I might need to save each of these in different channels???
+            end
+
+            if num_sync_events > 0
+                a_in.USBstreamFile.SyncEvents(1, a_in.USBFile_EventPos:a_in.USBFile_EventPos+num_sync_events-1) = double(sync_signals(sync_prefixes)); % Save the sync signals
+                a_in.USBstreamFile.SyncEventTimes(1, a_in.USBFile_EventPos:a_in.USBFile_EventPos+num_sync_events-1) = double((sync_prefixes_index + a_in.USBFile.USBFile_SamplePos -1)); % Not really sure how, but the indexes and sample indexes are used to save times?
+                a_in.USBFile_EventPos = a_in.USBFile_EventPos + num_sync_events;
+            end
+
+            a_in.USBFile_SamplePos = a_in.USBFile_SamplePos + num_data_samples;
+        else
+            stop(a_in.Timer);
+            delete(a_in.Timer);
+            error('Error: invalid frame returned.')
         end
     end
         
+
+    end
+
+    function voltage = bits2volts(a_in, new_samples)
+        % 16-bit ADC
+        % 0V-10V: 0-65,536 bits
+        % 1V = 6,553.6 bits
+        % bits / 6,553.6 = volts
+
+        voltage = 0;
+
+        range_index = a_in.RangeIndex(1); % Get range index for channel 1
+
+        voltage_range = a_in.RangeVoltageSpan(range_index); % Get voltage range (usually 0V-10V) for channel 1
+        voltage_offset = a_in.RangeOffsets(range_index); % Get the voltage offset (if there is one) for channel 1
+
+        voltage = ((double(new_samples)/a_in.chBits -1) * voltage_range) - voltage_offset; % samples / num_of_bits * range - offset = volts
 
     end
 

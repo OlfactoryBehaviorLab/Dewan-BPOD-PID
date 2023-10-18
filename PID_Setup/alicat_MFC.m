@@ -29,7 +29,7 @@ classdef alicat_MFC < handle
 
         end
 
-        function data = pollMFC(data_to_return)
+        function data = pollMFC(key)
             data = [];
 
             % Poll MFC and return the requested data
@@ -39,6 +39,20 @@ classdef alicat_MFC < handle
             % A (All), I(ID), F(Flow Rate), P(Pressure)
             % If no char, All is returned by default
             % Error on no response from MFC
+
+            switch key
+                case 'A'
+
+                case 'I'
+
+                case 'F'
+
+                case 'P'
+
+                otherwise
+
+
+            end
         end
 
         

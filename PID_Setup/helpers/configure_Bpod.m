@@ -19,9 +19,9 @@ function configure_Bpod(port, state)
     set_reduced_baudrate(port, state); % Send command to Bpod
 
     if state == 1
-        BpodSystem.StartModuleRelay(['Serial' port]);
+        BpodSystem.StartModuleRelay(['Serial' num2str(port)]);
     elseif state == 0
-        BpodSystem.StopModuleRelay(['Serial' port]);
+        BpodSystem.StopModuleRelay(['Serial' num2str(port)]);
     end
 
 end
@@ -29,12 +29,13 @@ end
 function set_reduced_baudrate(port, state)
     global BpodSystem;
 
+    BpodSystem.SerialPort.flush();
     BpodSystem.SerialPort.write('B', 'char', port, 'uint8', state, 'uint8'); % Send B command with the port to adjust, and the state to place the port in
 
     new_baud = BpodSystem.SerialPort.read(1, 'uint32'); % Read 1 uint32 (4 bytes) from the BPOD; new baudrate
-    success_byte = BpodSystem.Serialport.read(1, 'uint8'); % Read 1 uint8 (1 byte) from the BPOD; success byte
+    success_byte = BpodSystem.SerialPort.read(1, 'uint8'); % Read 1 uint8 (1 byte) from the BPOD; success byte
 
-    if new_baud ~= 52700 || success_byte ~=1
-        error(['Error setting reduced baudrate for port: ' port]);
+    if new_baud ~= 57600 || success_byte ~= 1
+        error(['Error setting reduced baudrate for port: ' num2str(port)]);
     end
 end

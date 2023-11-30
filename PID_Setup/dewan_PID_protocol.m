@@ -20,20 +20,34 @@ if success ~= 1
     return
 end
 
-%startup = pid_startup_gui(); % Get Startup Parameters
-%main_gui = pid_main_gui(startup.session_type); % Launch Main GUI, no need to wait
+%startup_params = pid_startup_gui(); % Get Startup Parameters
+%main_gui = pid_main_gui(startup_params.session_type); % Launch Main GUI, no need to wait
 
 main_gui = pid_main_gui("PID"); % Launch Main GUI, no need to wait
+
+TrialManager = BpodTrialManager;
+
+function run_PID(BpodSystem, main_gui)
+    user_params = main_gui.get_params(); % Get settings from the GUI
+    Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
+    sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
+    
+    for current_trial = 1:Settings.number_of_trials
+
+    end
+
+
+end
+
 
 
 function sma = generate_state_machine(BpodSystem, Settings)
     sma = NewStateMatrix();
 
-    
-    pre_trial_odor_time = 0.5;
-    pre_trial_solvent_time = 2;
-    odor_duration = 2;
-    post_trial_solvent_time = 2;
+    % pre_trial_odor_time = 0.5;
+    % pre_trial_solvent_time = 2;
+    % odor_duration = 2;
+    % post_trial_solvent_time = 2;
 
     switch Settings.experiment_type
         case 'PID'
@@ -59,8 +73,8 @@ function sma = generate_state_machine(BpodSystem, Settings)
     end
 end
 
-function generate_experiment_parameters(BpodSystem, Settings)
-
+function generate_trial_parameters(BpodSystem, Settings)
+    parameters = {}; % Container for all the trial parameters
 end
 
 function a_in = setup_analog_input(COM)
@@ -170,4 +184,14 @@ function stream_analog_data(a_in)
 
     end
 
+end
+
+function Settings = merge_structs(startup, trial_props)
+    % Adapted from Stack Overflow user Barpa's Mar. 17, 2013 Answer
+    % https://stackoverflow.com/questions/15456627/how-to-simply-concatenate-two-structures-with-different-fields-in-matlab
+
+    field_names = [fieldnames(startup); fieldnames(trial_props)];
+    combined_settings = [struct2cell(startup); struct2cell(trial_props)];
+
+    Settings = cell2struct(combined_settings, field_names, 1);
 end

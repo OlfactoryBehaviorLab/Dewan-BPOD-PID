@@ -1,3 +1,7 @@
+% Bpod Serial Configuration Utilities
+% Dewan Lab, Florida State University
+% Austin Pauley, 11/2023
+
 function configure_Bpod(port, state)
     global BpodSystem;
     

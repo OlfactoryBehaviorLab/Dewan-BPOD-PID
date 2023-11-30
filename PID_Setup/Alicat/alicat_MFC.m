@@ -1,3 +1,7 @@
+% Alicat MFC Wrapper Class for Bpod 
+% Dewan Lab, Florida State University
+% Austin Pauley, 11/2023
+
 classdef alicat_MFC < handle
     properties
         ID

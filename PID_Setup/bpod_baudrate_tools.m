@@ -12,9 +12,6 @@ function set_reduced_baudrate(port, state)
     num_modules = BpodSystem.Modules.nModules;
     port_states = BpodSystem.Modules.Connected;
 
-    % if baudrate > 256000
-    %     error(['Baudrate ' baudrate 'is too fast for RS232!']);
-    % end
 
     % Some input validation
     if port > num_modules || port < num_modules

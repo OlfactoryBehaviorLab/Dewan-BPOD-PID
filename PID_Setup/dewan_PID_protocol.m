@@ -1,10 +1,15 @@
 %#ok<*NASGU,*STRNU,*DEFNU,*INUSD,*NUSED,*GVMIS> 
 function dewan_PID_protocol
 global BpodSystem;
+
+if isempty(BpodSystem)
+    Bpod;
+end
+
 trial_manager = BpodTrialManager;
 is_streaming = 0;
-% analog_in = setup_analog_input('COM9');
-% analog_in.scope();
+analog_in = setup_analog_input('COM9');
+%analog_in.scope();
 % native 2 unicode to convert from dec -> ascii
 if isempty(analog_in)
     return
@@ -23,20 +28,20 @@ end
 %startup_params = pid_startup_gui(); % Get Startup Parameters
 %main_gui = pid_main_gui(startup_params.session_type); % Launch Main GUI, no need to wait
 
-main_gui = pid_main_gui("PID"); % Launch Main GUI, no need to wait
+main_gui = pid_main_gui("PID", @run_PID); % Launch Main GUI, no need to wait
 
 TrialManager = BpodTrialManager;
 
-function run_PID(BpodSystem, main_gui)
+function run_PID(main_gui)
+    main_gui.update_voltage(5);
     user_params = main_gui.get_params(); % Get settings from the GUI
-    Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
-    sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
-    
+    disp(user_params)
+    %Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
+    %sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
+    %disp(sma)
     for current_trial = 1:Settings.number_of_trials
 
     end
-
-
 end
 
 
@@ -79,21 +84,22 @@ end
 
 function a_in = setup_analog_input(COM)
     try
-        a_in = BpodAnalogIn(COM);
+    a_in = BpodAnalogIn(COM);
     catch
         a_in = [];
-        disp('Error connecting to analog input on COM: %s', string(COM));
+        error('Error connecting to analog input on COM: %s', string(COM));
     end
+
     a_in.InputRange(1) = {"0V:10V"};
     a_in.nActiveChannels = 1;
     a_in.Thresholds(1) = 10;
     a_in.ResetVoltages(1) = 9.95;
     a_in.SMeventsEnabled(1) = 1;
     a_in.Stream2USB(1) = 1;
-    a_in.startModuleStream();
-    a_in.startReportingEvents();
-    a_in.startUSBStream();
-    is_streaming = 1;
+    %a_in.startModuleStream();
+    %a_in.startReportingEvents();
+    %a_in.startUSBStream();
+
 
 end
 
@@ -121,7 +127,7 @@ function stream_analog_data(a_in)
         return
     end
 
-    num_bytes_to_read = a_in.bytesAvailable;
+    num_bytes_to_read = a_in.Port.bytesAvailable;
     num_bytes_per_frame = 4; % num frames (1) * 2 + 2
 
     if num_bytes_to_read > num_bytes_per_frame % Are there at least 4 bytes (1 frame) available to read?
@@ -147,7 +153,6 @@ function stream_analog_data(a_in)
             if a_in.USBstream2File % If streaming to USB
                 data_to_write(1, :) = data_samples; %  raw bits
                 data_to_write(2, :) = data_samples_volts; % volts
-                a_in.USBStreamFile.Samples(1, a_in.USBFile_SamplePos:a_in.USBFile_SamplePos+num_data_samples-1) = data_to_write; % Save the data to the USB; I might need to save each of these in different channels???
             end
 
             if num_sync_events > 0

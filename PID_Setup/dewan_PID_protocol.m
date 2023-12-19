@@ -2,78 +2,72 @@
 function dewan_PID_protocol
 global BpodSystem;
 
+%% If Bpod has not been loaded, load it
 if isempty(BpodSystem)
     Bpod;
 end
 
 trial_manager = BpodTrialManager;
 is_streaming = 0;
+
+%% Load needed modules
 analog_in = setup_analog_input('COM9');
-%analog_in.scope();
-% native 2 unicode to convert from dec -> ascii
-if isempty(analog_in)
-    return
-end
+load_valve_driver_commands();
 
-success = LoadSerialMessages('ValveModule1', {['B' 48], ['B' 192], ['O' 1], ['B' 0]}); 
-% 1. B48 = 00110000; Valve 6 & 5 ON; Odor Vial On
-% 2. B192 = 11000000; Valve 7 & 8 ON; Solvent Vial On
-% 3. O1 = FV ON
-% 4. B0 = 00000000; All OFF
-if success ~= 1
-    disp("Error sending commands to the valve driver module!")
-    return
-end
-
-%startup_params = pid_startup_gui(); % Get Startup Parameters
+startup_params = pid_startup_gui(); % Get Startup Parameters
 %main_gui = pid_main_gui(startup_params.session_type); % Launch Main GUI, no need to wait
 
 main_gui = pid_main_gui("PID", @run_PID); % Launch Main GUI, no need to wait
 
-TrialManager = BpodTrialManager;
 
 function run_PID(main_gui)
-    main_gui.update_voltage(5);
-    user_params = main_gui.get_params(); % Get settings from the GUI
-    disp(user_params)
-    %Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
-    %sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
-    %disp(sma)
+    Settings = get_settings(main_gui, startup_params);
+    sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
+    disp(sma)
     for current_trial = 1:Settings.number_of_trials
-
+        disp(current_trial)
     end
 end
 
+function Settings = get_settings(main_gui, startup_params)
+    user_params = main_gui.get_params(); % Get settings from the GUI
+    Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
+    disp(Settings);
+end
 
 
 function sma = generate_state_machine(BpodSystem, Settings)
     sma = NewStateMatrix();
 
-    % pre_trial_odor_time = 0.5;
-    % pre_trial_solvent_time = 2;
-    % odor_duration = 2;
-    % post_trial_solvent_time = 2;
+    % Analog1In event key:
+    %   S: Trial Start
+    %   P: Solvent odor pretrial duration
+    %   F: FV Actuation (Odor Duration)
+    %   C: FV Close for second solvent duration
+    %   E: Trial End (Close everything)
 
-    switch Settings.experiment_type
+    pre_trial_time = Settings.odor_preduration;
+    odor_duration = Settings.odor_duration;
+
+    switch Settings.session_type
         case 'PID'
         case 'CF'
-            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', pre_trial_time, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'ValveModule1', 1}); % Open vial 3 & 4 (valve 5 & 6) and wait for equalization
-            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'ValveModule1', 3}); % Open FV (valve 1) for odor duration
-            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'ValveModule1', 4}); % Close everything
+            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', pre_trial_time, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'Analog1In', ['#' 'S'], 'ValveModule1', 4}); % Open vial 3 & 4 (valve 5 & 6) and wait for equalization
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'Analog1In', ['#' 'F'],'ValveModule1', 5}); % Open FV (valve 1) for odor duration
+            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'Analog1In', ['#' 'E'],'ValveModule1', 6}); % Close everything
         case 'PURE'
-            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', pre_trial_time, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'ValveModule1', 2}); % Open vial 1 & 2 (valve 7 & 8) and wait for equalization8
-            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'ValveModule1', 3}); % Open FV (valve 1) for odor duration
-            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'ValveModule1', 4}); % Close everything
+            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', pre_trial_time, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'Analog1In', ['#' 'S'], 'ValveModule1', 1}); % Open vial 1 & 2 (valve 7 & 8) and wait for equalization8
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'Analog1In', ['#' 'F'], 'ValveModule1', 2}); % Open FV (valve 1) for odor duration
+            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'Analog1In', ['#' 'E'], 'ValveModule1', 5}); % Close everything
         case 'SOLVENT'
-            sma = AddState(sma, 'Name', 'PreTrialSolvent', 'Timer', pre_trial_solvent_time, 'StateChangeConditions', {'Tup', 'PreTrialOdor'}, 'OutputActions', {'ValveModule1', 2}); % Turn on vial 1 & 2 (valve 7 & 8) for pre_trial_solvent_time
-            sma = AddState(sma, 'Name', 'PreTrialOdor', 'Timer', pre_trial_odor_time, 'StateChangeConditions', {'Tup', 'PID_measurement'}, 'OutputActions', {'ValveModule1', 1}); % Turn on vial 3 & 4 (valve 5 & 6) so odor can equalize
-            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'OdorOff'}, 'OutputActions', {'ValveModule1', 3}); % Open FV (valve 1) for odor duration
-            sma = AddState(sma, 'Name', 'OdorOff', 'Timer', post_trial_solvent_time, 'StateChangeConditions', {'Tup', 'AllOff'}, 'OutputActions', {'ValveModule1', 2}); % Closes odor vial and actuates FV; allows solvent to PID
-            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'ValveModule1', 4}); % Close everything
+            sma = AddState(sma, 'Name', 'PreTrialSolvent', 'Timer', pre_trial_solvent_time, 'StateChangeConditions', {'Tup', 'PreTrialOdor'}, 'OutputActions', {'Analog1In', ['#' 'S'], 'ValveModule1', 1}); % Turn on vial 1 & 2 (valve 7 & 8) for pre_trial_solvent_time
+            sma = AddState(sma, 'Name', 'PreTrialOdor', 'Timer', pre_trial_odor_time, 'StateChangeConditions', {'Tup', 'PID_measurement'}, 'OutputActions', {'Analog1In', ['#' 'P'], 'ValveModule1', 3}); % Turn on vial 3 & 4 (valve 5 & 6) so odor can equalize
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'OdorOff'}, 'OutputActions', {'Analog1In', ['#' 'F'], 'ValveModule1', 5}); % Open FV (valve 1) for odor duration
+            sma = AddState(sma, 'Name', 'OdorOff', 'Timer', post_trial_solvent_time, 'StateChangeConditions', {'Tup', 'AllOff'}, 'OutputActions', {'Analog1In', ['#' 'C'], 'ValveModule1', 1}); % Closes odor vial and actuates FV; allows solvent to PID
+            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'Analog1In', ['#' 'E'], 'ValveModule1', 6}); % Close everything
         case 'CAL'
         case 'KIN'
             % Stuff goes here later
-        
 
     end
 end
@@ -101,6 +95,22 @@ function a_in = setup_analog_input(COM)
     %a_in.startUSBStream();
 
 
+end
+
+function load_valve_driver_commands()
+    % 1. B192 = 11000000; Valve 7 & 8 ON; Solvent Vial On
+    % 2. B193 = 11000001; Valve 7 & 8 ON | FV ON; Solvent Vial On
+    % 3. B240 = 11110000; All Valves ON except FV; for solvent trial + odor pretrial duration
+    % 4. B48 = 00110000; Valve 6 & 5 ON; Odor Vial On
+    % 5. B49 = 00110001; Valve 6 & 5 ON | FV ON; Odor Vial On
+    % 6. B0 = 00000000; All OFF
+    
+    success = LoadSerialMessages('ValveModule1', {['B' 192], ['B' 193], ['B' 240], ['B' 48], ['B' 49], ['B' 0]}); 
+
+
+    if success ~= 1
+        error("Error sending commands to the valve driver module!")
+    end
 end
 
 function stop_streaming(a_in)

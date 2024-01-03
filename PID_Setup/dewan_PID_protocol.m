@@ -1,18 +1,18 @@
 %#ok<*NASGU,*STRNU,*DEFNU,*INUSD,*NUSED,*GVMIS> 
 function dewan_PID_protocol
 global BpodSystem;
-global analog_in;
+%global analog_in;
 
 %% If Bpod has not been loaded, load it
 if isempty(BpodSystem)
     Bpod;
 end
 
-
 trial_manager = BpodTrialManager;
 % is_streaming = 0;
 
 %% Load needed modules
+
 analog_in = setup_analog_input('COM9');
 load_valve_driver_commands();
 load_analog_in_commands();
@@ -22,13 +22,18 @@ global startup_params;
 startup_params = pid_startup_gui(); % Get Startup Parameters
 %main_gui = pid_main_gui(startup_params.session_type); % Launch Main GUI, no need to wait
 
-main_gui = pid_main_gui("PID", @run_PID); % Launch Main GUI, no need to wait
+main_gui = pid_main_gui("PID", @run_PID, @cleanup); % Launch Main GUI, no need to wait
 
 BpodSystem.Data = {};
 BpodSystem.Data.analog_stream_swap = [];
 
 
-stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.5);
+stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05);
+
+function cleanup(app, ~)
+    evalin('base', ['clear']) 
+    delete(app)
+end
 
 
 function run_PID(~, ~, main_gui)
@@ -75,7 +80,8 @@ function sma = generate_state_machine(BpodSystem, Settings)
         case 'Odor'
             sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 4}); % Open vial 3 & 4 (valve 5 & 6) and wait for equalization
             sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 5}); % Open FV (valve 1) for odor duration
-            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 00, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 3,'ValveModule1', 6}); % Close everything
+            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0.01, 'StateChangeConditions', {'Tup', 'End'}, 'OutputActions', {'AnalogIn1', 3,'ValveModule1', 6}); % Close everything
+            sma = AddState(sma, 'Name', 'End', 'Timer', 0, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {});
         case 'Pure'
             sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 1}); % Open vial 1 & 2 (valve 7 & 8) and wait for equalization8
             sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2, 'ValveModule1', 2}); % Open FV (valve 1) for odor duration

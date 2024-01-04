@@ -31,13 +31,19 @@ stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, BpodSystem)},
 
 function run_PID(~, ~, main_gui)
     start_streaming(analog_in, stream_timer);
-
+    main_gui.lock_gui();
     Settings = get_settings(main_gui, startup_params);
     BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
     sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
     trial_manager.startTrial(sma);
 
     for i = 1:Settings.number_of_trials % Main Loopdy Loop and pull
+        if BpodSystem.BeingUsed == 0
+            break
+        end
+        
+        HandlePauseCondition();
+
         SendStateMachine(sma, 'RunASAP');
         
         raw_events = trial_manager.getTrialData();
@@ -45,6 +51,7 @@ function run_PID(~, ~, main_gui)
         SaveBpodSessionData;
 
         BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
+        
         trial_manager.startTrial()
     end
         
@@ -53,6 +60,7 @@ function run_PID(~, ~, main_gui)
     get_analog_data(analog_in, BpodSystem);
     BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
     SaveBpodSessionData;
+    main_gui.unlock_gui();
 
 end
 

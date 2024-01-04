@@ -67,7 +67,6 @@ function get_analog_data(a_in, BpodSystem)
         % bits / 6,553.6 = volts
         
         resolution = get_voltage_resolution(a_in);
-        disp(resolution);
 
         voltage = new_samples * resolution;
     

@@ -3,6 +3,8 @@ function dewan_PID_protocol
 global BpodSystem;
 %global analog_in;
 
+addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
+
 %% If Bpod has not been loaded, load it
 if isempty(BpodSystem)
     Bpod;

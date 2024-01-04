@@ -18,7 +18,7 @@ load_analog_in_commands();
 
 startup_params = pid_startup_gui(); % Get Startup Parameters
 %main_gui = pid_main_gui(startup_params.session_type); % Launch Main GUI, no need to wait
-main_gui = pid_main_gui("PID", @run_PID); % Launch Main GUI, no need to wait
+main_gui = pid_main_gui("PID", startup_params.odor, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
 % Framework of Data to save
 BpodSystem.Data = {};
@@ -37,8 +37,8 @@ function run_PID(~, ~, main_gui)
     sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
     trial_manager.startTrial(sma);
 
-    for i = 1:Settings.number_of_trials % Main Loopdy Loop and pull
-        if BpodSystem.BeingUsed == 0
+    for i = 2:Settings.number_of_trials % Main Loopdy Loop and pull; start at 2 since trial one is exectued before the loop
+        if BpodSystem.Status.BeingUsed == 0
             break
         end
         

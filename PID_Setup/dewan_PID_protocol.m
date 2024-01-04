@@ -1,7 +1,6 @@
 %#ok<*NASGU,*STRNU,*DEFNU,*INUSD,*NUSED,*GVMIS> 
 function dewan_PID_protocol
 global BpodSystem;
-%global analog_in;
 
 addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
 
@@ -11,27 +10,24 @@ if isempty(BpodSystem)
 end
 
 trial_manager = BpodTrialManager;
-% is_streaming = 0;
 
 %% Load needed modules
-
 analog_in = setup_analog_input('COM9');
 load_valve_driver_commands();
 load_analog_in_commands();
 
-global startup_params;
-
 startup_params = pid_startup_gui(); % Get Startup Parameters
 %main_gui = pid_main_gui(startup_params.session_type); % Launch Main GUI, no need to wait
-
 main_gui = pid_main_gui("PID", @run_PID); % Launch Main GUI, no need to wait
 
+% Framework of Data to save
 BpodSystem.Data = {};
 BpodSystem.Data.analog_stream_swap = [];
 BpodSystem.Data.Settings = [];
 BpodSystem.Data.ExperimentParams = startup_params;
 
-stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); % Analog Input read timer
+% Analog Input read timer
+stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
 
 function run_PID(~, ~, main_gui)
     start_streaming(analog_in, stream_timer);
@@ -41,14 +37,13 @@ function run_PID(~, ~, main_gui)
     sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
     trial_manager.startTrial(sma);
 
-    for i = 1:2 % Main Loopdy Loop and pull
+    for i = 1:Settings.number_of_trials % Main Loopdy Loop and pull
         SendStateMachine(sma, 'RunASAP');
         
         raw_events = trial_manager.getTrialData();
         BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
         SaveBpodSessionData;
 
-        Settings = get_settings(main_gui, startup_params);
         BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
         trial_manager.startTrial()
     end
@@ -101,9 +96,6 @@ function sma = generate_state_machine(BpodSystem, Settings)
     end
 end
 
-function generate_trial_parameters(BpodSystem, Settings)
-    parameters = {}; % Container for all the trial parameters; do we need this???
-end
 
 function load_valve_driver_commands()
     % 1. B192 = 11000000; Valve 7 & 8 ON; Solvent Vial On

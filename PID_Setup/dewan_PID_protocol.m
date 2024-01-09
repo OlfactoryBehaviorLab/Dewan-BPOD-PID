@@ -17,8 +17,8 @@ load_valve_driver_commands();
 load_analog_in_commands();
 
 startup_params = pid_startup_gui(); % Get Startup Parameters
-%main_gui = pid_main_gui(startup_params.session_type); % Launch Main GUI, no need to wait
-main_gui = pid_main_gui("PID", startup_params.odor, @run_PID, @valve_control); % Launch Main GUI, no need to wait
+main_gui = pid_main_gui(startup_params.session_type, @run_PID, @valve_control); % Launch Main GUI, no need to wait
+% main_gui = pid_main_gui("PID", startup_params.odor, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
 % Framework of Data to save
 BpodSystem.Data = {};
@@ -156,14 +156,5 @@ function start_streaming(a_in, stream_timer)
     is_streaming = 1;
 end
 
-end
 
-function Settings = merge_structs(startup, trial_props)
-    % Adapted from Stack Overflow user Barpa's Mar. 17, 2013 Answer
-    % https://stackoverflow.com/questions/15456627/how-to-simply-concatenate-two-structures-with-different-fields-in-matlab
-
-    field_names = [fieldnames(startup); fieldnames(trial_props)];
-    combined_settings = [struct2cell(startup); struct2cell(trial_props)];
-
-    Settings = cell2struct(combined_settings, field_names, 1);
 end

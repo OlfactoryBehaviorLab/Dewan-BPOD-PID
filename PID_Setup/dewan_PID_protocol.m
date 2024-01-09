@@ -2,6 +2,9 @@
 function dewan_PID_protocol
 global BpodSystem;
 
+startup_params = evalin('base', 'startup_params');
+
+disp(startup_params);
 addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
 
 %% If Bpod has not been loaded, load it
@@ -16,25 +19,29 @@ analog_in = setup_analog_input('COM9');
 load_valve_driver_commands();
 load_analog_in_commands();
 
-startup_params = pid_startup_gui(); % Get Startup Parameters
+%startup_params = pid_startup_gui(); % Get Startup Parameters
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
-% main_gui = pid_main_gui("PID", startup_params.odor, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
 % Framework of Data to save
 BpodSystem.Data = {};
 BpodSystem.Data.analog_stream_swap = [];
 BpodSystem.Data.Settings = [];
 BpodSystem.Data.ExperimentParams = startup_params;
+BpodSystem.Data.update_gui_params = [];
 
 % Analog Input read timer
+%% TODO: create callback function that calls get_analog_data; too much functionality has been punted to get_analog_data
 stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, main_gui, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
 
 function run_PID(~, ~, main_gui)
+    Settings = get_settings(main_gui, startup_params); % Settings wont change for duration of trials, so this will be valid for trial 1
     start_streaming(analog_in, stream_timer);
     main_gui.lock_gui();
-    Settings = get_settings(main_gui, startup_params);
+
     BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
+
     sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
+
     trial_manager.startTrial(sma);
 
     for i = 2:Settings.number_of_trials % Main Loopdy Loop and pull; start at 2 since trial one is exectued before the loop
@@ -65,9 +72,14 @@ function run_PID(~, ~, main_gui)
 
 end
 
-function Settings = get_settings(main_gui, startup_params)
+function Settings = get_settings(main_gui, startup_params, update_gui_params)
     Settings = main_gui.get_params(); % Get settings from the GUI
     %Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
+
+    BpodSystem.Data.update_gui_params.gain = Settings.pid_gain;
+    BpodSystem.Data.update_gui_params.calibration_1 = startup_params.x1;
+    BpodSystem.Data.update_gui_params.calibration_5 = startup_params.x5;
+    BpodSystem.Data.update_gui_params.calibration_10 = startup_params.x10;
 end
 
 

@@ -17,7 +17,7 @@ load_valve_driver_commands();
 load_analog_in_commands();
 
 startup_params = pid_startup_gui(); % Get Startup Parameters
-main_gui = pid_main_gui(startup_params.session_type, @run_PID, @valve_control); % Launch Main GUI, no need to wait
+main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 % main_gui = pid_main_gui("PID", startup_params.odor, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
 % Framework of Data to save

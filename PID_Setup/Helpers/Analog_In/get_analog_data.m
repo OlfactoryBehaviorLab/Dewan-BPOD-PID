@@ -11,10 +11,7 @@ function get_analog_data(a_in, main_gui, BpodSystem)
     num_bytes_per_frame = 4; % num frames (1) * 2 + 2
     data_packet = struct;
     if num_bytes_to_read > num_bytes_per_frame % Are there at least 4 bytes (1 frame) available to read?
-        % disp('We got bytes!');
-
         number_of_bytes_to_read = floor(num_bytes_to_read/num_bytes_per_frame) * num_bytes_per_frame; % Depending on sampling rate, there may be multiple bytes to read
-        % fprintf('There are %d bytes available!\n', number_of_bytes_to_read)
 
         data = a_in.Port.read(number_of_bytes_to_read, 'uint8'); % Read in the data
         data_prefix = data(1); % The first byte should be an identifier prefix
@@ -23,17 +20,14 @@ function get_analog_data(a_in, main_gui, BpodSystem)
             %% Byte 1
             prefixes = data(1:num_bytes_per_frame:end); % Looks every 4 bytes for prefixes
             data(1:num_bytes_per_frame:end) = []; % Remove prefixes from the data stream
-            %assignin('base', 'prefixes', prefixes);
 
             %% Byte 2
             sync_bytes = data(1:num_bytes_per_frame-1:end); % Sync byte is now every third byte in frame (originally the second byte)
             data(1:num_bytes_per_frame-1:end) = []; % Remove the sync data from the data stream; if no sync data, this is a spacer of 0
-            %assignin('base', 'sync_bytes', sync_bytes);
+
 
             %% Byte 3 & 4
             data_samples = double(typecast(data(1:end), 'uint16')); % Cast all the data to 16-bit ints (2 byte message -> 1 value); this is ugly, thank matlab for it; int * double = int
-            %assignin('base', 'raw_data', data);
-            %assignin('base', 'cast_data', data_samples);
             num_data_samples = length(data_samples); % Get the number of samples
 
             sync_prefixes = (prefixes == '#'); % Look and see if any of the frames received are for sync events
@@ -47,10 +41,7 @@ function get_analog_data(a_in, main_gui, BpodSystem)
             data_packet.sync_indexes = double(sync_bytes(sync_prefixes_index)); % Save the sync bytes (this allows us to know what events happened where during data capture)
             data_packet.sync_time = double((sync_prefixes_index + num_data_samples)); % Not really sure how, but the indexes and sample indexes are used to save times?
             
-            % disp('Put data where it goes')
             BpodSystem.Data.analog_stream_swap =  [BpodSystem.Data.analog_stream_swap data_packet];
-            % assignin('base', 'data_packet', data_packet)
-            % disp('Saved Data');
 
             average_voltage = mean(data_samples_volts);
             update_gui(main_gui, average_voltage, data_samples);

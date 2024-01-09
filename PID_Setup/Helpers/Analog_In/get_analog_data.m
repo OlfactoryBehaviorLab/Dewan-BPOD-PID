@@ -1,4 +1,4 @@
-function get_analog_data(a_in, BpodSystem)
+function get_analog_data(a_in, main_gui, BpodSystem)
     % Adapted from BpodAnalogIn updatePlot function
     % Copyright (C) 2023 Sanworks LLC, Rochester, New York, USA
     % Modified and redistributed under GNU General Public License v3
@@ -51,6 +51,9 @@ function get_analog_data(a_in, BpodSystem)
             BpodSystem.Data.analog_stream_swap =  [BpodSystem.Data.analog_stream_swap data_packet];
             % assignin('base', 'data_packet', data_packet)
             % disp('Saved Data');
+
+            average_voltage = mean(data_samples_volts);
+            update_gui(main_gui, average_voltage, data_samples);
         else
             stop(a_in.Timer);
             delete(a_in.Timer);

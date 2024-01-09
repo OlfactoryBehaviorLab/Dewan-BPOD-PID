@@ -27,7 +27,7 @@ BpodSystem.Data.Settings = [];
 BpodSystem.Data.ExperimentParams = startup_params;
 
 % Analog Input read timer
-stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
+stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, main_gui, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
 
 function run_PID(~, ~, main_gui)
     start_streaming(analog_in, stream_timer);
@@ -57,7 +57,8 @@ function run_PID(~, ~, main_gui)
         
     raw_events = trial_manager.getTrialData();
     stop_streaming(analog_in, stream_timer);
-    get_analog_data(analog_in, BpodSystem);
+    get_analog_data(analog_in, main_gui, BpodSystem);
+    update_gui(main_gui, 0, 0);
     BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
     SaveBpodSessionData;
     main_gui.unlock_gui();

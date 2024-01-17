@@ -1,10 +1,8 @@
 %#ok<*NASGU,*STRNU,*DEFNU,*INUSD,*NUSED,*GVMIS> 
 function dewan_PID_protocol
 global BpodSystem;
+BpodSystem.PluginObjects.a_in = [];
 
-startup_params = evalin('base', 'startup_params');
-
-disp(startup_params);
 addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
 
 %% If Bpod has not been loaded, load it
@@ -15,11 +13,11 @@ end
 trial_manager = BpodTrialManager;
 
 %% Load needed modules
-analog_in = setup_analog_input('COM9');
+BpodSystem.PluginObjects.a_in = setup_analog_input('COM9');
 load_valve_driver_commands();
 load_analog_in_commands();
 
-%startup_params = pid_startup_gui(); % Get Startup Parameters
+startup_params = pid_startup_gui(); % Get Startup Parameters
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
 % Framework of Data to save
@@ -31,11 +29,11 @@ BpodSystem.Data.update_gui_params = [];
 
 % Analog Input read timer
 %% TODO: create callback function that calls get_analog_data; too much functionality has been punted to get_analog_data
-stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(analog_in, main_gui, BpodSystem)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
+stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
 
 function run_PID(~, ~, main_gui)
     Settings = get_settings(main_gui, startup_params); % Settings wont change for duration of trials, so this will be valid for trial 1
-    start_streaming(analog_in, stream_timer);
+    start_streaming(stream_timer);
     main_gui.lock_gui();
 
     BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
@@ -63,8 +61,9 @@ function run_PID(~, ~, main_gui)
     end
         
     raw_events = trial_manager.getTrialData();
-    stop_streaming(analog_in, stream_timer);
-    get_analog_data(analog_in, main_gui, BpodSystem);
+    stop_streaming(stream_timer);
+    get_analog_data(main_gui);
+
     update_gui(main_gui, 0, 0);
     BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
     SaveBpodSessionData;
@@ -72,10 +71,11 @@ function run_PID(~, ~, main_gui)
 
 end
 
-function Settings = get_settings(main_gui, startup_params, update_gui_params)
+function Settings = get_settings(main_gui, startup_params)
     Settings = main_gui.get_params(); % Get settings from the GUI
     %Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
 
+    
     BpodSystem.Data.update_gui_params.gain = Settings.pid_gain;
     BpodSystem.Data.update_gui_params.calibration_1 = startup_params.x1;
     BpodSystem.Data.update_gui_params.calibration_5 = startup_params.x5;
@@ -152,7 +152,8 @@ function load_analog_in_commands()
     end
 end
 
-function stop_streaming(a_in, stream_timer)
+function stop_streaming(stream_timer)
+    a_in = BpodSystem.PluginObjects.a_in;
     stop(stream_timer)
     is_streaming = 0;
     %a_in.stopModuleStream();
@@ -161,7 +162,8 @@ function stop_streaming(a_in, stream_timer)
     
 end
 
-function start_streaming(a_in, stream_timer)
+function start_streaming(stream_timer)
+    a_in = BpodSystem.PluginObjects.a_in;
    % a_in.startModuleStream();
    % a_in.startReportingEvents();
     a_in.startUSBStream();

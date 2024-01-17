@@ -1,4 +1,5 @@
-function get_analog_data(a_in, main_gui, BpodSystem)
+function get_analog_data(main_gui)
+    global BpodSystem;
     % Adapted from BpodAnalogIn updatePlot function
     % Copyright (C) 2023 Sanworks LLC, Rochester, New York, USA
     % Modified and redistributed under GNU General Public License v3
@@ -7,6 +8,9 @@ function get_analog_data(a_in, main_gui, BpodSystem)
     %     fprintf('Error, the Analog input module is not streaming data!');
     %     return
     % end
+
+    a_in = BpodSystem.PluginObjects.a_in; 
+
     num_bytes_to_read = a_in.Port.bytesAvailable;
     num_bytes_per_frame = 4; % num frames (1) * 2 + 2
     data_packet = struct;

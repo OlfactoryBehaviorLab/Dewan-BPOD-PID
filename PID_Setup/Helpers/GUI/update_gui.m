@@ -9,7 +9,7 @@ function PPM = calculate_PPM(data_samples)
     global BpodSystem;
 
     gain = BpodSystem.Data.update_gui_params.gain;
-    CF = BpodSystem.Data.update_gui_params.cf;
+    CF = BpodSystem.Data.update_gui_params.CF;
     calibration = [];
     switch(gain) % Select the correct calibration for our current gain
         case 'x1'

@@ -4,11 +4,11 @@ global BpodSystem;
 BpodSystem.PluginObjects.a_in = [];
 
 % Framework of Data to save
-BpodSystem.Data = {};
+BpodSystem.Data = [];
 BpodSystem.Data.analog_stream_swap = [];
 BpodSystem.Data.Settings = [];
-BpodSystem.Data.ExperimentParams = startup_params;
 BpodSystem.Data.update_gui_params = [];
+startup_params = [];
 
 addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
 
@@ -23,10 +23,11 @@ trial_manager = BpodTrialManager;
 startup_gui = pid_startup_gui(); % Get Startup Parameters
 waitfor(startup_gui, 'finished', true); % Wait for user to successfully submit information
 
-if isempty(startup_params)
+if ~isvalid(startup_gui)
     error('Startup GUI closed early. No start parameters selected!');
 else
     startup_params = startup_gui.session_info; % Get the parameters
+    BpodSystem.Data.ExperimentParams = startup_params;
     delete(startup_gui); % Close GUI    
 end
 

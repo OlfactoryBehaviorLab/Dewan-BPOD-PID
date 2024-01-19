@@ -18,7 +18,15 @@ load_valve_driver_commands();
 load_analog_in_commands();
 
 %% Launch GUIs
-startup_params = pid_startup_gui(); % Get Startup Parameters
+startup_gui = pid_startup_gui(); % Get Startup Parameters
+waitfor(startup_gui, 'finished', true); % Wait for user to successfully submit information
+startup_params = startup_gui.session_info; % Get the parameters
+delete(startup_gui); % Close GUI
+
+if isempty(startup_params)
+    error('Startup GUI closed early. No start parameters selected!');
+end
+
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
 % Framework of Data to save
@@ -81,6 +89,7 @@ function Settings = get_settings(main_gui, startup_params)
     BpodSystem.Data.update_gui_params.calibration_1 = startup_params.x1;
     BpodSystem.Data.update_gui_params.calibration_5 = startup_params.x5;
     BpodSystem.Data.update_gui_params.calibration_10 = startup_params.x10;
+    BpodSytsem.Data.update_gui_params.CF = startup_params.CF;
 end
 
 

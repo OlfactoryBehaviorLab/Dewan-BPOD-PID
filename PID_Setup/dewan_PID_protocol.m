@@ -3,6 +3,13 @@ function dewan_PID_protocol
 global BpodSystem;
 BpodSystem.PluginObjects.a_in = [];
 
+% Framework of Data to save
+BpodSystem.Data = {};
+BpodSystem.Data.analog_stream_swap = [];
+BpodSystem.Data.Settings = [];
+BpodSystem.Data.ExperimentParams = startup_params;
+BpodSystem.Data.update_gui_params = [];
+
 addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
 
 %% If Bpod has not been loaded, load it
@@ -12,33 +19,26 @@ end
 
 trial_manager = BpodTrialManager;
 
+%% Launch GUIs
+startup_gui = pid_startup_gui(); % Get Startup Parameters
+waitfor(startup_gui, 'finished', true); % Wait for user to successfully submit information
+
+if isempty(startup_params)
+    error('Startup GUI closed early. No start parameters selected!');
+else
+    startup_params = startup_gui.session_info; % Get the parameters
+    delete(startup_gui); % Close GUI    
+end
+
+main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
+
 %% Load needed modules
 BpodSystem.PluginObjects.a_in = setup_analog_input('COM9'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
 load_valve_driver_commands();
 load_analog_in_commands();
 
-%% Launch GUIs
-startup_gui = pid_startup_gui(); % Get Startup Parameters
-waitfor(startup_gui, 'finished', true); % Wait for user to successfully submit information
-startup_params = startup_gui.session_info; % Get the parameters
-delete(startup_gui); % Close GUI
-
-if isempty(startup_params)
-    error('Startup GUI closed early. No start parameters selected!');
-end
-
-main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
-
-% Framework of Data to save
-BpodSystem.Data = {};
-BpodSystem.Data.analog_stream_swap = [];
-BpodSystem.Data.Settings = [];
-BpodSystem.Data.ExperimentParams = startup_params;
-BpodSystem.Data.update_gui_params = [];
-
 % Analog Input read timer
 stream_timer = timer('TimerFcn', {@(h,e)timer_callback(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
-
 
 %% Function DEFS below
 function run_PID(~, ~, main_gui)
@@ -72,7 +72,7 @@ function run_PID(~, ~, main_gui)
         
     raw_events = trial_manager.getTrialData();
     stop_streaming(stream_timer);
-    get_analog_data(main_gui);
+    get_analog_data();
 
     update_gui(main_gui, 0, 0);
     BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
@@ -89,7 +89,7 @@ function Settings = get_settings(main_gui, startup_params)
     BpodSystem.Data.update_gui_params.calibration_1 = startup_params.x1;
     BpodSystem.Data.update_gui_params.calibration_5 = startup_params.x5;
     BpodSystem.Data.update_gui_params.calibration_10 = startup_params.x10;
-    BpodSytsem.Data.update_gui_params.CF = startup_params.CF;
+    BpodSystem.Data.update_gui_params.CF = startup_params.CF;
 end
 
 

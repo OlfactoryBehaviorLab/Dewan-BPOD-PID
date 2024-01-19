@@ -8,7 +8,7 @@ BpodSystem.Data = [];
 BpodSystem.Data.analog_stream_swap = [];
 BpodSystem.Data.Settings = [];
 BpodSystem.Data.update_gui_params = [];
-startup_params = [];
+startup_params = evalin('base', 'startup_params');
 
 addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
 
@@ -23,12 +23,14 @@ trial_manager = BpodTrialManager;
 startup_gui = pid_startup_gui(); % Get Startup Parameters
 waitfor(startup_gui, 'finished', true); % Wait for user to successfully submit information
 
-if ~isvalid(startup_gui)
-    error('Startup GUI closed early. No start parameters selected!');
-else
+if isvalid(startup_gui)
     startup_params = startup_gui.session_info; % Get the parameters
     BpodSystem.Data.ExperimentParams = startup_params;
     delete(startup_gui); % Close GUI    
+elseif ~isempty(startup_params)
+    BpodSystem.Data.ExperimentParams = startup_params;
+else
+    error('Startup GUI closed early. No start parameters selected!');
 end
 
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
@@ -38,8 +40,10 @@ BpodSystem.PluginObjects.a_in = setup_analog_input('COM9'); % Just going to keep
 load_valve_driver_commands();
 load_analog_in_commands();
 
+
+% TODO: Fix this timer
 % Analog Input read timer
-stream_timer = timer('TimerFcn', {@(h,e)timer_callback(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
+stream_timer = timer('TimerFcn', {@(h,e)timer_callback(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05, 'busyMode', 'queue'); 
 
 %% Function DEFS below
 function run_PID(~, ~, main_gui)
@@ -142,7 +146,7 @@ function load_valve_driver_commands()
     success = LoadSerialMessages('ValveModule1', commands); 
 
     if success ~= 1
-        error("Error sending commands to the valve driver module!")
+        error("Error sending commands to the valve driver module!");
     end
 end
 
@@ -159,7 +163,7 @@ function load_analog_in_commands()
     success = LoadSerialMessages('AnalogIn1', commands);
 
     if success ~= 1
-        error("Error sending commands to the analog input module!")
+        error("Error sending commands to the analog input module!");
     end
 end
 

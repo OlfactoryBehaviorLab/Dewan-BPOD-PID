@@ -13,10 +13,11 @@ end
 trial_manager = BpodTrialManager;
 
 %% Load needed modules
-BpodSystem.PluginObjects.a_in = setup_analog_input('COM9');
+BpodSystem.PluginObjects.a_in = setup_analog_input('COM9'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
 load_valve_driver_commands();
 load_analog_in_commands();
 
+%% Launch GUIs
 startup_params = pid_startup_gui(); % Get Startup Parameters
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
@@ -28,9 +29,10 @@ BpodSystem.Data.ExperimentParams = startup_params;
 BpodSystem.Data.update_gui_params = [];
 
 % Analog Input read timer
-%% TODO: create callback function that calls get_analog_data; too much functionality has been punted to get_analog_data
 stream_timer = timer('TimerFcn', {@(h,e)timer_callback(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
 
+
+%% Function DEFS below
 function run_PID(~, ~, main_gui)
     Settings = get_settings(main_gui, startup_params); % Settings wont change for duration of trials, so this will be valid for trial 1
     start_streaming(stream_timer);

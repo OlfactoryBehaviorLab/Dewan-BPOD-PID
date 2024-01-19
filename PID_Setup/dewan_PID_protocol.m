@@ -29,7 +29,7 @@ BpodSystem.Data.update_gui_params = [];
 
 % Analog Input read timer
 %% TODO: create callback function that calls get_analog_data; too much functionality has been punted to get_analog_data
-stream_timer = timer('TimerFcn', {@(h,e)get_analog_data(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
+stream_timer = timer('TimerFcn', {@(h,e)timer_callback(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
 
 function run_PID(~, ~, main_gui)
     Settings = get_settings(main_gui, startup_params); % Settings wont change for duration of trials, so this will be valid for trial 1
@@ -57,7 +57,7 @@ function run_PID(~, ~, main_gui)
 
         BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
         
-        trial_manager.startTrial()
+        trial_manager.startTrial();
     end
         
     raw_events = trial_manager.getTrialData();
@@ -75,7 +75,6 @@ function Settings = get_settings(main_gui, startup_params)
     Settings = main_gui.get_params(); % Get settings from the GUI
     %Settings = merge_structs(startup_params, user_params); % Merge startup config with users settings
 
-    
     BpodSystem.Data.update_gui_params.gain = Settings.pid_gain;
     BpodSystem.Data.update_gui_params.calibration_1 = startup_params.x1;
     BpodSystem.Data.update_gui_params.calibration_5 = startup_params.x5;
@@ -154,7 +153,7 @@ end
 
 function stop_streaming(stream_timer)
     a_in = BpodSystem.PluginObjects.a_in;
-    stop(stream_timer)
+    stop(stream_timer);
     is_streaming = 0;
     %a_in.stopModuleStream();
     %a_in.stopReportingEvents();
@@ -167,7 +166,7 @@ function start_streaming(stream_timer)
    % a_in.startModuleStream();
    % a_in.startReportingEvents();
     a_in.startUSBStream();
-    start(stream_timer)
+    start(stream_timer);
     is_streaming = 1;
 end
 

@@ -1,4 +1,4 @@
-function [average_voltage, samples] = get_analog_data()
+function get_analog_data()
     global BpodSystem;
     % Adapted from BpodAnalogIn updatePlot function
     % Copyright (C) 2023 Sanworks LLC, Rochester, New York, USA
@@ -46,9 +46,6 @@ function [average_voltage, samples] = get_analog_data()
             data_packet.sync_time = double((sync_prefixes_index + num_data_samples)); % Not really sure how, but the indexes and sample indexes are used to save times?
             
             BpodSystem.Data.analog_stream_swap =  [BpodSystem.Data.analog_stream_swap data_packet];
-
-            average_voltage = mean(data_samples_volts);
-            samples = data_samples;
         else
             stop(a_in.Timer);
             delete(a_in.Timer);

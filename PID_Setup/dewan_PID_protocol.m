@@ -52,8 +52,9 @@ main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main
 
 % TODO: Fix this timer
 % Analog Input read timer
-stream_timer = timer('TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
-gui_timer = timer('TimerFcn', {@(h,e)update_gui()}, 'ExecutionMode', 'fixedRate', 'Period', 0.1, 'BusyMode', 'queue');
+stream_timer = timer('Name', 'Analog_Input_Poll', 'TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
+
+gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.3, 'BusyMode', 'queue');
 
 
 %% Function DEFS below

@@ -33,22 +33,22 @@ else
     error('Startup GUI closed early. No start parameters selected!');
 end
 
+global main_gui;
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
-%% Load needed modules
-BpodSystem.PluginObjects.a_in = setup_analog_input('COM9'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
-load_valve_driver_commands();
-load_analog_in_commands();
+
 
 
 % TODO: Fix this timer
 % Analog Input read timer
-stream_timer = timer('TimerFcn', {@(h,e)timer_callback(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.05, 'busyMode', 'queue'); 
+stream_timer = timer('TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
+gui_timer = timer('TimerFcn', {@(h,e)update_gui()}, 'ExecutionMode', 'fixedRate', 'Period', 0.1, 'BusyMode', 'queue');
+
 
 %% Function DEFS below
 function run_PID(~, ~, main_gui)
     Settings = get_settings(main_gui, startup_params); % Settings wont change for duration of trials, so this will be valid for trial 1
-    start_streaming(stream_timer);
+    start_streaming();
     main_gui.lock_gui();
 
     BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
@@ -167,23 +167,30 @@ function load_analog_in_commands()
     end
 end
 
-function stop_streaming(stream_timer)
+function stop_streaming()
+
     a_in = BpodSystem.PluginObjects.a_in;
+   
+    a_in.stopUSBStream();
     stop(stream_timer);
+    stop(gui_timer)
     is_streaming = 0;
+
     %a_in.stopModuleStream();
     %a_in.stopReportingEvents();
-    a_in.stopUSBStream();
-    
 end
 
-function start_streaming(stream_timer)
+function start_streaming()
+
     a_in = BpodSystem.PluginObjects.a_in;
-   % a_in.startModuleStream();
-   % a_in.startReportingEvents();
+
     a_in.startUSBStream();
     start(stream_timer);
+    start(gui_timer);
     is_streaming = 1;
+
+   % a_in.startModuleStream();
+   % a_in.startReportingEvents();
 end
 
 

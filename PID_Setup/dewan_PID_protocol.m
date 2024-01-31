@@ -2,15 +2,16 @@
 function dewan_PID_protocol
 global BpodSystem;
 
-startup_params = evalin('base', 'startup_params');
-
-addpath(genpath('Helpers/')); % Make sure all our helper scripts are loaded
+%% Make sure all our helper scripts are loaded
+addpath(genpath('Helpers/'));
 
 %% If Bpod has not been loaded, load it
 if isempty(BpodSystem)
     Bpod;
 end
 
+
+%% Reset a_in object if it is still being held by the Bpod
 if ~isempty(BpodSystem.PluginObjects) && ~isempty(BpodSystem.PluginObjects.a_in)
     BpodSystem.PluginObjects.a_in = [];
 end
@@ -28,7 +29,9 @@ BpodSystem.Data.analog_stream_swap = [];
 BpodSystem.Data.Settings = [];
 BpodSystem.Data.update_gui_params = [];
 
+%% Create Trial manager
 trial_manager = BpodTrialManager;
+
 
 %% Launch GUIs
 startup_gui = pid_startup_gui(); % Get Startup Parameters
@@ -44,17 +47,12 @@ else
     error('Startup GUI closed early. No start parameters selected!');
 end
 
-global main_gui;
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
 
 
-
-
-% TODO: Fix this timer
-% Analog Input read timer
-stream_timer = timer('Name', 'Analog_Input_Poll', 'TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); 
-
-gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.3, 'BusyMode', 'queue');
+% Timer Objects
+stream_timer = timer('Name', 'Analog_Input_Poll', 'TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); % Stream analog in data
+gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.3, 'BusyMode', 'queue'); % Async GUI update during trials
 
 
 %% Function DEFS below
@@ -102,6 +100,7 @@ function run_PID(~, ~, main_gui)
 
 end
 
+
 function Settings = get_settings(main_gui, startup_params) % This is kinda defunct and needs to just be removed
     Settings = main_gui.get_params(); % Get settings from the GUI
 end
@@ -141,6 +140,7 @@ function sma = generate_state_machine(BpodSystem, Settings)
     end
 end
 
+
 function load_valve_driver_commands()
     % 1. B192 = 11000000; Valve 7 & 8 ON; Solvent Vial On
     % 2. B193 = 11000001; Valve 7 & 8 ON | FV ON; Solvent Vial On
@@ -157,6 +157,7 @@ function load_valve_driver_commands()
         error("Error sending commands to the valve driver module!");
     end
 end
+
 
 function load_analog_in_commands()
     %   Analog1In event key:
@@ -175,6 +176,7 @@ function load_analog_in_commands()
     end
 end
 
+
 function stop_streaming()
 
     a_in = BpodSystem.PluginObjects.a_in;
@@ -187,6 +189,7 @@ function stop_streaming()
     %a_in.stopModuleStream();
     %a_in.stopReportingEvents();
 end
+
 
 function start_streaming()
 

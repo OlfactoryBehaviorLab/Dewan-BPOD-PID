@@ -44,7 +44,11 @@ if isvalid(startup_gui)
     BpodSystem.Data.ExperimentParams = startup_params;
     delete(startup_gui); % Close GUI    
 else
-    error('Startup GUI closed early. No start parameters selected!');
+    dialog = errordlg('Startup GUI closed early, halting protocol!', 'Error!', {'WindowStyle', 'modal'});
+    beep; % No Man, you're thinking of "Beep boop boop bop, boop boop bop"
+    uiwait(dialog);
+    soft_shutdown([]); % There is no main GUI to close, so we just give it a whole lotta nothing to delete 
+    return;
 end
 
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control, @soft_shutdown); % Launch Main GUI, no need to wait

@@ -12,7 +12,7 @@ end
 
 
 %% Reset a_in object if it is still being held by the Bpod
-if ~isempty(BpodSystem.PluginObjects) && ~isempty(BpodSystem.PluginObjects.a_in)
+if any([isprop(BpodSystem, 'PluginObjects'), isprop(BpodSystem.PluginObjects, 'a_in')])
     BpodSystem.PluginObjects.a_in = [];
 end
 
@@ -29,6 +29,8 @@ BpodSystem.Data.analog_stream_swap = [];
 BpodSystem.Data.Settings = [];
 BpodSystem.Data.update_gui_params = [];
 
+BpodSystem.Status.SafeClose = 1;
+
 %% Create Trial manager
 trial_manager = BpodTrialManager;
 
@@ -41,13 +43,11 @@ if isvalid(startup_gui)
     startup_params = startup_gui.session_info; % Get the parameters
     BpodSystem.Data.ExperimentParams = startup_params;
     delete(startup_gui); % Close GUI    
-elseif ~isempty(startup_params)
-    BpodSystem.Data.ExperimentParams = startup_params;
 else
     error('Startup GUI closed early. No start parameters selected!');
 end
 
-main_gui = pid_main_gui(startup_params, @run_PID, @valve_control); % Launch Main GUI, no need to wait
+main_gui = pid_main_gui(startup_params, @run_PID, @valve_control, @soft_shutdown); % Launch Main GUI, no need to wait
 
 
 % Timer Objects
@@ -57,6 +57,8 @@ gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}
 
 %% Function DEFS below
 function run_PID(~, ~, main_gui)
+    BpodSystem.Status.SafeClose = 0;
+
     Settings = get_settings(main_gui, startup_params); % Settings wont change for duration of trials, so this will be valid for trial 1
     start_streaming();
     main_gui.lock_gui();
@@ -77,6 +79,11 @@ function run_PID(~, ~, main_gui)
         SendStateMachine(sma, 'RunASAP');
         
         raw_events = trial_manager.getTrialData();
+        
+        if BpodSystem.Status.BeingUsed == 0
+            break
+        end
+
         BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
         SaveBpodSessionData;
 
@@ -90,14 +97,29 @@ function run_PID(~, ~, main_gui)
         BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
     end
 
-    stop_streaming();
+    stop_streaming(); % Stop all timers and stop streaming
     get_analog_data(); % Get any straggling data
     %update_gui(main_gui, 0, 0);
 
     SaveBpodSessionData;
 
-    main_gui.unlock_gui();
+    if BpodSystem.Status.Shutdown_flag == 1
+        soft_shutdown(main_gui)
+    else
+        main_gui.unlock_gui();
+        BpodSystem.Status.SafeClose = 1;
+    end
 
+end
+
+
+function soft_shutdown(main_gui)
+    msg = msgbox("Shutting down, please wait...");
+    BpodSystem.Status.BeingUsed = 0; % Make sure current protocol is stopped
+    BpodSystem.PluginObjects.a_in = []; % Manually release a_in object
+    evalin('base', 'EndBpod;') % Execute EndBpod in the base environment to shutdown the system
+    delete(main_gui)
+    delete(msg);
 end
 
 

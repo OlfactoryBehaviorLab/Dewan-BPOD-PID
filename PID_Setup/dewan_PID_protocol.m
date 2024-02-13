@@ -139,7 +139,11 @@ function sma = generate_state_machine(BpodSystem, Settings)
     odor_duration = Settings.odor_duration / 1000;
     solvent_preduration = odor_duration - odor_preduration;
     solvent_duration = odor_duration;
-    baseline_duration = 2 - odor_preduration 
+    if odor_preduration > 2
+        baseline_duration = 0;
+    else
+        baseline_duration = 2 - odor_preduration;
+    end
 
 
     switch Settings.trial_type

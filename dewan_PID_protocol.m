@@ -139,8 +139,7 @@ function sma = generate_state_machine(BpodSystem, Settings)
     odor_duration = Settings.odor_duration / 1000;
     solvent_preduration = odor_duration - odor_preduration;
     solvent_duration = odor_duration;
-
-    if odor_preduration >= 2
+    if odor_preduration > 2
         baseline_duration = 0;
     else
         baseline_duration = 2 - odor_preduration;
@@ -201,9 +200,8 @@ function load_analog_in_commands()
     %   3. E: Trial End (Close everything)
     %   4. P: Solvent odor pretrial duration
     %   5. C: FV Close for second solvent duration
-    %   6. I: ITI Start
 
-    commands = {['#' 'S'], ['#' 'F'], ['#' 'E'], ['#' 'P'], ['#' 'C'], ['#', 'I']};
+    commands = {['#' 'S'], ['#' 'F'], ['#' 'E'], ['#' 'P'], ['#' 'C']};
 
     success = LoadSerialMessages('AnalogIn1', commands);
 

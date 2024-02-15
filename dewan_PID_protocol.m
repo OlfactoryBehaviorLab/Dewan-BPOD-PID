@@ -30,6 +30,7 @@ BpodSystem.Data.Settings = [];
 BpodSystem.Data.update_gui_params = [];
 
 BpodSystem.Status.SafeClose = 1;
+BpodSystem.Status.Shutdown_flag = 0;
 
 %% Create Trial manager
 trial_manager = BpodTrialManager;
@@ -121,8 +122,8 @@ function soft_shutdown(main_gui)
     msg = msgbox("Shutting down, please wait...");
     BpodSystem.Status.BeingUsed = 0; % Make sure current protocol is stopped
     BpodSystem.PluginObjects.a_in = []; % Manually release a_in object
-    evalin('base', 'EndBpod;') % Execute EndBpod in the base environment to shutdown the system
     delete(main_gui)
+    evalin('base', 'EndBpod;') % Execute EndBpod in the base environment to shutdown the system
     delete(msg);
 end
 

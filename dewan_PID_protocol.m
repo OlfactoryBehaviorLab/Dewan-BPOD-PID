@@ -18,7 +18,7 @@ end
 
 
 %% Load needed modules
-BpodSystem.PluginObjects.a_in = setup_analog_input('COM9'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
+BpodSystem.PluginObjects.a_in = setup_analog_input('COM8'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
 load_valve_driver_commands();
 load_analog_in_commands();
 
@@ -177,11 +177,11 @@ end
 
 
 function load_valve_driver_commands()
-    % 1. B192 = 11000000; Valve 7 & 8 ON; Solvent Vial On
-    % 2. B193 = 11000001; Valve 7 & 8 ON | FV ON; Solvent Vial On
+    % 1. B192 = 11000000; Valve 5 & 6 ON; Solvent Vial On
+    % 2. B193 = 11000001; Valve 5 & 6 ON | FV ON; Solvent Vial On
     % 3. B240 = 11110000; All Valves ON except FV; for solvent trial + odor pretrial duration
-    % 4. B48 = 00110000; Valve 6 & 5 ON; Odor Vial On
-    % 5. B49 = 00110001; Valve 6 & 5 ON | FV ON; Odor Vial On
+    % 4. B48 = 00110000; Valve 7 & 8 ON; Odor Vial On
+    % 5. B49 = 00110001; Valve 7 & 8 ON | FV ON; Odor Vial On
     % 6. B0 = 00000000; All OFF
 
     commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0]};

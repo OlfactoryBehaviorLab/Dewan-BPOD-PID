@@ -119,6 +119,20 @@ function run_PID(~, ~, main_gui)
 end
 
 
+function update_datafile(ExperimentParams)
+    odor_name = ExperimentParams.odor;
+    experimenter_name = ExperimentParams.name;
+    session_type = ExperimentParams.session_type;
+
+    file_name = [odor_name '_' session_type '_' experimenter_name '.mat'];
+
+    file_path = fullfile(BpodSystem.Path.DataFolder, session_type, file_name);
+    BpodSystem.Path.CurrentDataFile = file_path
+
+end
+
+
+
 function soft_shutdown(main_gui)
     msg = msgbox("Shutting down, please wait...");
     BpodSystem.Status.BeingUsed = 0; % Make sure current protocol is stopped

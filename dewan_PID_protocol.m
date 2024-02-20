@@ -130,7 +130,7 @@ function update_datafile(ExperimentParams)
     file_name = [odor_name '_' session_type '_' experimenter_name '.mat'];
 
     file_path = fullfile(BpodSystem.Path.DataFolder, session_type, file_name);
-    BpodSystem.Path.CurrentDataFile = file_path
+    BpodSystem.Path.CurrentDataFile = file_path;
 
 end
 

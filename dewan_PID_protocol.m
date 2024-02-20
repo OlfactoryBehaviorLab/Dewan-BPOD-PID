@@ -44,6 +44,7 @@ waitfor(startup_gui, 'finished', true); % Wait for user to successfully submit i
 if isvalid(startup_gui)
     startup_params = startup_gui.session_info; % Get the parameters
     BpodSystem.Data.ExperimentParams = startup_params;
+    update_datafile(startup_params) % After the neccessary information is input, update the filepath for this experiment
     delete(startup_gui); % Close GUI    
 else
     dialog = errordlg('Startup GUI closed early, halting protocol!', 'Error!', {'WindowStyle', 'modal'});
@@ -52,6 +53,8 @@ else
     soft_shutdown([]); % There is no main GUI to close, so we just give it a whole lotta nothing to delete 
     return;
 end
+
+
 
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control, @soft_shutdown); % Launch Main GUI, no need to wait
 
@@ -130,7 +133,6 @@ function update_datafile(ExperimentParams)
     BpodSystem.Path.CurrentDataFile = file_path
 
 end
-
 
 
 function soft_shutdown(main_gui)

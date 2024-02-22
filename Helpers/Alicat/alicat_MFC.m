@@ -24,19 +24,22 @@ classdef alicat_MFC < handle
             global BpodSystem
 
             command = [obj.ID 's' num2str(flow_rate)]; % Combine the command bytes in this order: ID 's' FLOWRATE
-
-            send_command_to_MFC(obj, command);
             
-            new_setpoint = poll_MFC(obj, 'S'); % Get new setpoint
-            current_flowrate = poll_MFC(obj, 'F'); % Get new flowrate
-            
-            if new_setpoint ~= flow_rate
-                error("Flowrate was not set properly!")
-            end
+            send_command_to_MFC(obj, command); % This automatically responds
 
-            if (current_flowrate >= flow_rate * 1.05) || (current_flowrate <= flow_rate * 0.95)
-                error("Flowrate is currently out of range!")
-            end
+            response = alicat_MFC.read_buffer(); % Read and parse response
+            disp(native2unicode(response))
+
+            %new_setpoint = alicat_MFC.parse_response(response, 'S'); % Get new setpoint
+            %current_flowrate = alicat_MFC.parse_response(response, 'F'); % Get new flowrate
+            
+            % if new_setpoint ~= flow_rate
+            %     error("Flowrate was not set properly!")
+            % end
+
+            % if (current_flowrate >= flow_rate * 1.05) || (current_flowrate <= flow_rate * 0.95)
+            %     disp("Flowrate is currently out of range!")
+            % end
             % After setting the flow rate, poll the MFC and check that the setting both stuck
             % And that the flow rate is correct (+/- 0.05%)
 
@@ -45,31 +48,56 @@ classdef alicat_MFC < handle
         function data = poll_MFC(obj, key)
             global BpodSystem
             
-            BpodSystem.SerialPort.flush(); % Clear everything and then read
-
+            
             send_command_to_MFC(obj, obj.ID); % Request all of the information from the MFC by sending only its ID
+            
+            if length(response) ~= 7 % There should be 7 bytes sent back
+                error(['MFC ' obj.ID ' did not respond properly!']);
+            end
+            
+            data = parse_response(response, key);
+            
+        end
+
+        function send_command_to_MFC(obj, command)
+            global BpodSystem;
+            BpodSystem.SerialPort.flush(); % Clear everything and then send command
+            pause(0.05);
+            byte_command = alicat_MFC.prep_MFC_command(command); % Prep command to dec form
+            ModuleWrite(obj.Port, byte_command); % Send dec command to MFCs
+            pause(0.05);
+        end
+    end
+
+    methods(Static)
+        function command_as_bytes = prep_MFC_command(command_to_prep)
+            command_as_bytes = unicode2native(command_to_prep); % Convert to decimal representation of chars
+            command_as_bytes = [command_as_bytes 13]; % Add a CR (DEC: 13) per Alicat to end the command
+        end
+
+        function response = read_buffer()
+            global BpodSystem;
+
 
             % The code executes faster than serial can spit bytes out
             last_bytes = [];
             response = [];
 
-            while true % Continue reading in bytes until the response array does not get longer for two cycles
+            while true  % Continue reading in bytes until the response array does not get longer for two cycles
                 num_bytes = BpodSystem.SerialPort.bytesAvailable; % Get number of bytes to read, if this is zero we read none
                 response = [response BpodSystem.SerialPort.read(num_bytes, 'uint8')]; % Response is read from MFC  
-                
+                pause(0.02);
                 if length(response) == last_bytes % If the length of our response is unchanged since the last loop, we are done reading
                     break;
                 else
                     last_bytes = length(response); % Set the length of the response to check against during the next loop
-                    pause(0.03); % Wait 30ms before reading again
+                    pause(0.01); % Wait 30ms before reading again
                 end
-
             end
-            
-            response = native2unicode(response); % Convert decimal to chars
-            response = split(response); % Split response into individual components
-            response = response(1:end-1); % Remove empty cell at end
-            
+        end
+
+        function data = parse_response(response, key)
+
             % MFC Dataframe Indexes
             % 1. ID
             % 2. Pressure
@@ -79,10 +107,10 @@ classdef alicat_MFC < handle
             % 6. Set Point
             % 7. Gas
 
-            if length(response) ~= 7 % There should be 7 bytes sent back
-                error(['MFC ' obj.ID ' did not respond properly!']);
-            end
-
+            response = native2unicode(response); % Convert decimal to chars
+            response = split(response); % Split response into individual components
+            response = response(1:end-1); % Remove empty cell at end
+            disp(response)
             if length(key) > 1
                 key = key(1); % If multiple bytes are passed, only use the first one
             end
@@ -117,18 +145,6 @@ classdef alicat_MFC < handle
                 otherwise
                     data = response; % Return everything
             end
-        end
-
-        function send_command_to_MFC(obj, command)
-            byte_command = obj.prep_MFC_command(command); % Prep command to dec form
-            ModuleWrite(obj.Port, byte_command); % Send dec command to MFCs
-        end
-    end
-
-    methods(Static)
-        function command_as_bytes = prep_MFC_command(command_to_prep)
-            command_as_bytes = unicode2native(command_to_prep); % Convert to decimal representation of chars
-            command_as_bytes = [command_as_bytes 13]; % Add a CR (DEC: 13) per Alicat to end the command
         end
     end
 end

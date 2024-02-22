@@ -53,10 +53,9 @@ else
     return;
 end
 
-ModuleWrite('ValveModule1', 6)  % Reset valves to All Off incase it was powered down with valves switched on
-
 
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control, @soft_shutdown); % Launch Main GUI, no need to wait
+ModuleWrite('ValveModule1', ['B' 0])  % Reset valves to All Off incase it was powered down with valves switched on
 
 
 % Timer Objects

@@ -49,14 +49,23 @@ classdef alicat_MFC < handle
 
             send_command_to_MFC(obj, obj.ID); % Request all of the information from the MFC by sending only its ID
 
-            % The code executes faster than serial can spit bytes out, so we wait until we receive all 49
-            while BpodSystem.SerialPort.bytesAvailable() < 49
-                pause(0.01);
+            % The code executes faster than serial can spit bytes out
+            last_bytes = [];
+            response = [];
+
+            while true % Continue reading in bytes until the response array does not get longer for two cycles
+                num_bytes = BpodSystem.SerialPort.bytesAvailable; % Get number of bytes to read, if this is zero we read none
+                response = [response BpodSystem.SerialPort.read(num_bytes, 'uint8')]; % Response is read from MFC  
+                
+                if length(response) == last_bytes % If the length of our response is unchanged since the last loop, we are done reading
+                    break;
+                else
+                    last_bytes = length(response); % Set the length of the response to check against during the next loop
+                    pause(0.03); % Wait 30ms before reading again
+                end
+
             end
-
-            num_bytes = BpodSystem.SerialPort.bytesAvailable();
-
-            response = BpodSystem.SerialPort.read(num_bytes, 'uint8'); % Response is read from MFC
+            
             response = native2unicode(response); % Convert decimal to chars
             response = split(response); % Split response into individual components
             response = response(1:end-1); % Remove empty cell at end

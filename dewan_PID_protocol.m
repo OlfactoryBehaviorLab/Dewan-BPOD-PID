@@ -22,7 +22,6 @@ BpodSystem.PluginObjects.a_in = setup_analog_input('COM8'); % Just going to keep
 load_valve_driver_commands();
 load_analog_in_commands();
 
-ModuleWrite('ValveModule1', 6)  % Reset valves to All Off incase it was powered down with valves switched on
 
 % Framework of Data to save
 BpodSystem.Data = [];
@@ -54,6 +53,7 @@ else
     return;
 end
 
+ModuleWrite('ValveModule1', 6)  % Reset valves to All Off incase it was powered down with valves switched on
 
 
 main_gui = pid_main_gui(startup_params, @run_PID, @valve_control, @soft_shutdown); % Launch Main GUI, no need to wait

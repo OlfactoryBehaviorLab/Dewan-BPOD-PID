@@ -125,12 +125,21 @@ function update_datafile(ExperimentParams)
     odor_name = ExperimentParams.odor;
     experimenter_name = ExperimentParams.name;
     session_type = ExperimentParams.session_type;
-
-    file_name = [odor_name '_' session_type '_' experimenter_name '.mat'];
-
+    current_date = get_date;
+    file_name = [odor_name '_' session_type '_' experimenter_name '_' current_date '.mat'];
+    file_name = strjoin(file_name, '');
+    
     file_path = fullfile(BpodSystem.Path.DataFolder, session_type, file_name);
     BpodSystem.Path.CurrentDataFile = file_path;
 
+end
+
+
+function d = get_date()
+    d = datetime("now");
+    d = string(d);
+    d = strrep(d, ' ', '-');  % Remove space
+    d = strrep(d, ':', '-');  % Remove colons
 end
 
 

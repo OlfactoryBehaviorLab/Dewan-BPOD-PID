@@ -182,8 +182,8 @@ function sma = generate_state_machine(BpodSystem, Settings)
             sma = AddState(sma, 'Name', 'ITI', 'Timer', 2, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
         case 'Pure'
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
-            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 4}); % Open valve 5 & 6 (solvent valve 1 & 2) and wait for equalization
-            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2, 'ValveModule1', 5}); % Open FV (valve 1) for odor duration
+            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 5}); % Open valve 5 & 6 and FV(solvent valve 1 & 2) and wait for equalization
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2, 'ValveModule1', 4}); % Close FV (valve 1) for odor duration
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
             sma = AddState(sma, 'Name', 'ITI', 'Timer', 2, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
         case 'Solvent'
@@ -206,8 +206,8 @@ function load_valve_driver_commands()
     % 1. B192 = 11000000; Valve 7 & 8 ON; Odor Vial On
     % 2. B193 = 11000001; Valve 7 & 8 ON | FV ON; Odor Vial On
     % 3. B240 = 11110000; All Valves ON except FV; for solvent trial + odor pretrial duration
-    % 4. B48 = 00110000; Valve 5 & 6 ON; Solvent Vial On
-    % 5. B49 = 00110001; Valve 5 & 6 ON | FV ON; Solvent Vial On
+    % 4. B48 = 00110000; Valve 5 & 6 ON | FV OFF; Solvent Vial On
+    % 5. B49 = 00110001; Valve 5 & 6 ON | FV ON; Solvent Pretrial Duration
     % 6. B0 = 00000000; All OFF
 
     commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0]};

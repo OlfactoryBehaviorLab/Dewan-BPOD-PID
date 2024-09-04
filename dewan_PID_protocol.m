@@ -209,8 +209,10 @@ function load_valve_driver_commands()
     % 4. B48 = 00110000; Valve 5 & 6 ON | FV OFF; Solvent Vial On
     % 5. B49 = 00110001; Valve 5 & 6 ON | FV ON; Solvent Pretrial Duration
     % 6. B0 = 00000000; All OFF
+    % 7. B8 = 00001000; Valve 4 ON; ISB Valve On
+    % 8. B9 = 00001001; Valve 4 ON | FV ON; ISB Trial
 
-    commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0]};
+    commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0], [66 8], [66 9]};
 
     success = LoadSerialMessages('ValveModule1', commands); 
 

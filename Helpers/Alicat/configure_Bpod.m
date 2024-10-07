@@ -8,9 +8,9 @@ function configure_Bpod(port, state)
     num_modules = BpodSystem.Modules.nModules;
     port_states = BpodSystem.Modules.Connected;
 
-    if port > num_modules || port < num_modules
-        error([port ' is not a valid port number!']);
-    end
+    % if port > num_modules || port < num_modules
+    %     error([port ' is not a valid port number!']);
+    % end
 
     if port_states(port) ~= 0
         error(['Port ' port 'is already in use!']);
@@ -40,7 +40,9 @@ function set_reduced_baudrate(port, state)
     new_baud = BpodSystem.SerialPort.read(1, 'uint32'); % Read 1 uint32 (4 bytes) from the BPOD; new baudrate
     success_byte = BpodSystem.SerialPort.read(1, 'uint8'); % Read 1 uint8 (1 byte) from the BPOD; success byte
 
-    if new_baud ~= 57600 || success_byte ~= 1
+    if success_byte ~= 1
         error(['Error setting reduced baudrate for port: ' num2str(port)]);
+    else
+        disp('Success!');
     end
 end

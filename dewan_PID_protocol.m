@@ -161,7 +161,7 @@ end
 function sma = generate_state_machine(BpodSystem, Settings)
     sma = NewStateMatrix();
 
-    odor_preduration = Settings.odor_preduration / 1000; % Convert ms to s otherwise you'll be waiting a LONG time
+    odor_preduration = Settings.odor_preduration / 1000; % Convert ms to s otherwise you'll be waiting a LONG timezzz
     odor_duration = Settings.odor_duration / 1000;
     solvent_preduration = odor_duration - odor_preduration;
     solvent_duration = odor_duration;
@@ -197,12 +197,17 @@ function sma = generate_state_machine(BpodSystem, Settings)
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
         case 'Calibration'
+            odor_preduration = odor_preduration + 1.5;
+            
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
-            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 7}); % Open valve 4 (ISB valve) and wait for equalization
-            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 8}); % Open FV (valve 1) for ISB duration
+            %sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 7}); % Open valve 4 (ISB valve) and wait for equalization
+            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1}); 
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 9}); % Open FV (valve 1) for ISB duration
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
         case 'ISB'
+            odor_preduration = odor_preduration + 1.5;
+            ITI_duration = 2;
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
             sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 7}); % Open valve 4 (ISB valve) and wait for equalization
             sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 8}); % Open FV (valve 1) for ISB duration
@@ -223,8 +228,9 @@ function load_valve_driver_commands()
     % 6. B0 = 00000000; All OFF
     % 7. B8 = 00001000; Valve 4 ON; ISB Valve On
     % 8. B9 = 00001001; Valve 4 ON | FV ON; ISB Trial
+    % 9. B1 = 00000001; FV ON
 
-    commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0], [66 8], [66 9]};
+    commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0], [66 8], [66 9], [66 1]};
 
     success = LoadSerialMessages('ValveModule1', commands); 
 

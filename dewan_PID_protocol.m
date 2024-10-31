@@ -67,7 +67,7 @@ gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}
 function run_PID(~, ~, main_gui)
     BpodSystem.Status.SafeClose = 0;
 
-    Settings = get_settings(main_gui, startup_params); % Settings wont change for duration of trials, so this will be valid for trial 1
+    Settings = main_gui.get_params(); % Get settings from the GUI % Settings wont change for duration of trials, so this will be valid for trial 1
     start_streaming();
     main_gui.lock_gui();
 
@@ -150,11 +150,6 @@ function soft_shutdown(main_gui)
     delete(main_gui)
     evalin('base', 'EndBpod;') % Execute EndBpod in the base environment to shutdown the system
     delete(msg);
-end
-
-
-function Settings = get_settings(main_gui, startup_params) % This is kinda defunct and needs to just be removed
-    Settings = main_gui.get_params(); % Get settings from the GUI
 end
 
 

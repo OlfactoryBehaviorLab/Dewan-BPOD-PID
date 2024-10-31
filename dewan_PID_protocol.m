@@ -75,6 +75,15 @@ function run_PID(~, ~, main_gui)
 
     sma = generate_state_machine(BpodSystem, Settings); % Generate first trial's state machine
 
+    if startup_params.session_type == "Kinetics"
+        old_trial_type = Settings.trial_type;
+        Settings.trial_type = 'Kinetics';
+
+        sma_kin_subsample = generate_state_machine(BpodSystem, Settings);  % State machine for subsample trials where odor is not directed to the PID
+
+        Settings.trial_type = old_trial_type;
+    end
+
     trial_manager.startTrial(sma);
 
     for i = 2:Settings.number_of_trials % Main Loopdy Loop and pull; start at 2 since trial one is exectued before the loop
@@ -82,9 +91,19 @@ function run_PID(~, ~, main_gui)
             break
         end
         
+        is_subsample = false;
+        old_trial_type = [];
         HandlePauseCondition();
 
-        SendStateMachine(sma, 'RunASAP');
+        if mod(i, Settings.subsample) == 0
+            SendStateMachine(sma, 'RunASAP');
+        else
+            SendStateMachine(sma_kin_subsample, 'RunASAP')
+            is_subsample = true;
+            old_trial_type = Settings.trial_type;
+            Settings.trial_type = 'Kinematics';
+        end
+
         
         raw_events = trial_manager.getTrialData();
         
@@ -94,8 +113,13 @@ function run_PID(~, ~, main_gui)
 
         BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
         SaveBpodSessionData;
-
+        
         BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
+
+        if is_subsample
+            Settings.trial_type = old_trial_type;
+        end
+
         
         trial_manager.startTrial();
     end
@@ -206,6 +230,12 @@ function sma = generate_state_machine(BpodSystem, Settings)
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
             sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 7}); % Open valve 4 (ISB valve) and wait for equalization
             sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 8}); % Open FV (valve 1) for ISB duration
+            sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
+            sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
+        case 'Kinetics'
+            sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
+            sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 1}); % Open valve 7 & 8 (odor valve 1 & 2) and wait for equalization
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 1}); % Open FV (valve 1) for odor duration
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
     end

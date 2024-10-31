@@ -240,12 +240,12 @@ end
 
 function load_analog_in_commands()
     %   Analog1In event key:
-    %   1. S: Trial Start
-    %   2. F: FV Actuation (Odor Duration)
-    %   3. E: Trial End (Close everything)
-    %   4. P: Solvent odor pretrial duration
-    %   5. C: FV Close for second solvent duration
-    %   6. I: ITI Start
+    %   1. S: Trial Start (Decimal 83)
+    %   2. F: FV Actuation (Odor Duration) (Decimal 70)
+    %   3. E: Trial End (Close everything) (Decimal 69)
+    %   4. P: Solvent odor pretrial duration (Decimal 80)
+    %   5. C: FV Close for second solvent duration (Decimal 67)
+    %   6. I: ITI Start (Decimal 73)
 
     commands = {['#' 'S'], ['#' 'F'], ['#' 'E'], ['#' 'P'], ['#' 'C'], ['#', 'I']};
 

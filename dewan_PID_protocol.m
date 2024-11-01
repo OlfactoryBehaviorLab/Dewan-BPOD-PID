@@ -91,6 +91,8 @@ function run_PID(~, ~, main_gui)
             break
         end
         
+        main_gui.update_current_trial(string(i-1));
+
         is_subsample = false;
         old_trial_type = [];
         HandlePauseCondition();
@@ -98,7 +100,7 @@ function run_PID(~, ~, main_gui)
         if mod(i, Settings.subsamples) == 0
             SendStateMachine(sma, 'RunASAP');
         else
-            SendStateMachine(sma_kin_subsample, 'RunASAP')
+            SendStateMachine(sma_kin_subsample, 'RunASAP');
             is_subsample = true;
             old_trial_type = Settings.trial_type;
             Settings.trial_type = 'Kinematics';
@@ -235,7 +237,7 @@ function sma = generate_state_machine(BpodSystem, Settings)
         case 'Kinetics'
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
             sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 1}); % Open valve 7 & 8 (odor valve 1 & 2) and wait for equalization
-            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 1}); % Open FV (valve 1) for odor duration
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 7,'ValveModule1', 1}); % Open FV (valve 1) for odor duration
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
     end
@@ -271,8 +273,9 @@ function load_analog_in_commands()
     %   4. P: Solvent odor pretrial duration (Decimal 80)
     %   5. C: FV Close for second solvent duration (Decimal 67)
     %   6. I: ITI Start (Decimal 73)
+    %   7. K: Kinetic Trial No FV (Decimal 75)
 
-    commands = {['#' 'S'], ['#' 'F'], ['#' 'E'], ['#' 'P'], ['#' 'C'], ['#', 'I']};
+    commands = {['#' 'S'], ['#' 'F'], ['#' 'E'], ['#' 'P'], ['#' 'C'], ['#', 'I'], ['#', 'K']};
 
     success = LoadSerialMessages('AnalogIn1', commands);
 

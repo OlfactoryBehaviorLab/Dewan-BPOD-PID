@@ -95,7 +95,7 @@ function run_PID(~, ~, main_gui)
         old_trial_type = [];
         HandlePauseCondition();
 
-        if mod(i, Settings.subsample) == 0
+        if mod(i, Settings.subsamples) == 0
             SendStateMachine(sma, 'RunASAP');
         else
             SendStateMachine(sma_kin_subsample, 'RunASAP')

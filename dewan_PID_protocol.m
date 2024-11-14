@@ -161,7 +161,7 @@ function update_datafile(ExperimentParams)
     file_name = strjoin(file_name, '');
     
     file_path = fullfile(BpodSystem.Path.DataFolder, session_type, file_name);
-    BpodSystem.Path.CurrentDataFile = file_path;
+    BpodSystem.Path.CurrentDataFile = char(file_path);
 
 end
 

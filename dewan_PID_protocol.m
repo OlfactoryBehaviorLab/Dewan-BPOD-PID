@@ -102,15 +102,18 @@ function run_PID(~, ~, main_gui)
         old_trial_type = [];
         HandlePauseCondition();
 
-        if mod(i, Settings.subsamples) == 0
-            SendStateMachine(sma, 'RunASAP');
+        if startup_params.session_type == "Kinetics"
+            if mod(i, Settings.subsamples) == 0
+                SendStateMachine(sma, 'RunASAP');
+            else
+                SendStateMachine(sma_kin_subsample, 'RunASAP');
+                is_subsample = true;
+                old_trial_type = Settings.trial_type;
+                Settings.trial_type = 'Kinematics';
+            end
         else
-            SendStateMachine(sma_kin_subsample, 'RunASAP');
-            is_subsample = true;
-            old_trial_type = Settings.trial_type;
-            Settings.trial_type = 'Kinematics';
+            SendStateMachine(sma, 'RunASAP');
         end
-
         
         raw_events = trial_manager.getTrialData();
         
@@ -224,9 +227,8 @@ function sma = generate_state_machine(BpodSystem, Settings)
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
         case 'Calibration'
             odor_preduration = odor_preduration + 1.5;
-            
+            ITI_duration = 2;
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
-            %sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 7}); % Open valve 4 (ISB valve) and wait for equalization
             sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1}); 
             sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 9}); % Open FV (valve 1) for ISB duration
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything

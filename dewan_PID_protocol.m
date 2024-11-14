@@ -59,12 +59,17 @@ ModuleWrite('ValveModule1', ['B' 0])  % Reset valves to All Off incase it was po
 
 
 % Timer Objects
-stream_timer = timer('Name', 'Analog_Input_Poll', 'TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); % Stream analog in data
-gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.3, 'BusyMode', 'queue'); % Async GUI update during trials
+%stream_timer = timer('Name', 'Analog_Input_Poll', 'TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); % Stream analog in data
+%gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.3, 'BusyMode', 'queue'); % Async GUI update during trials
 
 
 %% Function DEFS below
 function run_PID(~, ~, main_gui)
+    behaviorDataFile = BpodSystem.Path.CurrentDataFile;
+    BpodSystem.PluginObjects.a_in.USBStreamFile = [behaviorDataFile(1:end-4) '_Alg.mat']; % Set datafile for analog data captured in this session
+    BpodSystem.PluginObjects.a_in.scope; % Launch Scope GUI
+    BpodSystem.PluginObjects.a_in.scope_StartStop % Start USB streaming + data logging
+
     BpodSystem.Status.SafeClose = 0;
 
     Settings = main_gui.get_params(); % Get settings from the GUI % Settings wont change for duration of trials, so this will be valid for trial 1
@@ -132,7 +137,7 @@ function run_PID(~, ~, main_gui)
     end
 
     stop_streaming(); % Stop all timers and stop streaming
-    get_analog_data(); % Get any straggling data
+    %get_analog_data(); % Get any straggling data
     %update_gui(main_gui, 0, 0);
 
     SaveBpodSessionData;
@@ -288,10 +293,12 @@ end
 function stop_streaming()
 
     a_in = BpodSystem.PluginObjects.a_in;
-   
-    a_in.stopUSBStream();
-    stop(stream_timer);
-    stop(gui_timer)
+    a_in.scope_StartStop;
+    a_in.endAcq;
+    a_in.stopReportingEvents;
+    %a_in.stopUSBStream();
+    %stop(stream_timer);
+    %stop(gui_timer)
     is_streaming = 0;
 
     %a_in.stopModuleStream();
@@ -303,9 +310,9 @@ function start_streaming()
 
     a_in = BpodSystem.PluginObjects.a_in;
 
-    a_in.startUSBStream();
-    start(stream_timer);
-    start(gui_timer);
+    %a_in.startUSBStream();
+    %start(stream_timer);
+    %start(gui_timer);
     is_streaming = 1;
 
    % a_in.startModuleStream();

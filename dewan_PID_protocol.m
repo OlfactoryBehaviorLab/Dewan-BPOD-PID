@@ -178,10 +178,11 @@ end
 function soft_shutdown(main_gui)
     msg = msgbox("Shutting down, please wait...");
     BpodSystem.Status.BeingUsed = 0; % Make sure current protocol is stopped
-    BpodSystem.PluginObjects.a_in = []; % Manually release a_in object
-    delete(main_gui)
-    evalin('base', 'EndBpod;') % Execute EndBpod in the base environment to shutdown the system
+    release_ain();
+    delete(main_gui);
+    evalin('base', 'EndBpod;'); % Execute EndBpod in the base environment to shutdown the system
     delete(msg);
+    evalin('base', 'clear');
 end
 
 
@@ -295,6 +296,5 @@ function release_ain()
     BpodSystem.PluginObjects.a_in.stopReportingEvents;
     BpodSystem.PluginObjects.a_in = []; % Manually release a_in object
 end
-
 
 end

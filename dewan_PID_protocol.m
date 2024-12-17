@@ -65,10 +65,10 @@ ModuleWrite('ValveModule1', ['B' 0])  % Reset valves to All Off incase it was po
 behaviorDataFile = BpodSystem.Path.CurrentDataFile;
 BpodSystem.PluginObjects.a_in.USBStreamFile = [behaviorDataFile(1:end-4) '_Alg.mat']; % Set datafile for analog data captured in this session
 BpodSystem.PluginObjects.a_in.scope; % Launch Scope GUI
+BpodSystem.PluginObjects.a_in.scope_StartStop(0.1) % Start USB streaming + data logging
 
 %% Function DEFS below
 function run_PID(~, ~, main_gui)
-    BpodSystem.PluginObjects.a_in.scope_StartStop(0.1) % Start USB streaming + data logging
 
     BpodSystem.Status.SafeClose = 0;
 
@@ -139,7 +139,6 @@ function run_PID(~, ~, main_gui)
     end
 
 
-    BpodSystem.PluginObjects.a_in.scope_StartStop(); % Stop USB streaming + data logging
 
     SaveBpodSessionData;
 
@@ -293,6 +292,7 @@ end
 
 
 function release_ain()
+    %BpodSystem.PluginObjects.a_in.scope_StartStop(); % Stop USB streaming + data logging
     BpodSystem.PluginObjects.a_in.endAcq;
     BpodSystem.PluginObjects.a_in.stopReportingEvents;
     BpodSystem.PluginObjects.a_in = []; % Manually release a_in object

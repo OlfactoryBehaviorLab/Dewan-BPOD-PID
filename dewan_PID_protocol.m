@@ -73,7 +73,6 @@ function run_PID(~, ~, main_gui)
     BpodSystem.Status.SafeClose = 0;
 
     Settings = main_gui.get_params(); % Get settings from the GUI % Settings wont change for duration of trials, so this will be valid for trial 1
-    start_streaming();
     main_gui.lock_gui();
 
     BpodSystem.Data.Settings = [BpodSystem.Data.Settings Settings];
@@ -139,9 +138,6 @@ function run_PID(~, ~, main_gui)
         BpodSystem.Data = AddTrialEvents(BpodSystem.Data, raw_events);
     end
 
-    stop_streaming(); % Stop all timers and stop streaming
-    %get_analog_data(); % Get any straggling data
-    %update_gui(main_gui, 0, 0);
 
     SaveBpodSessionData;
 
@@ -292,33 +288,10 @@ function load_analog_in_commands()
 end
 
 
-function stop_streaming()
-
-    a_in = BpodSystem.PluginObjects.a_in;
-    a_in.scope_StartStop;
-    a_in.endAcq;
-    a_in.stopReportingEvents;
-    %a_in.stopUSBStream();
-    %stop(stream_timer);
-    %stop(gui_timer)
-    is_streaming = 0;
-
-    %a_in.stopModuleStream();
-    %a_in.stopReportingEvents();
-end
-
-
-function start_streaming()
-
-    a_in = BpodSystem.PluginObjects.a_in;
-
-    %a_in.startUSBStream();
-    %start(stream_timer);
-    %start(gui_timer);
-    is_streaming = 1;
-
-   % a_in.startModuleStream();
-   % a_in.startReportingEvents();
+function release_ain()
+    BpodSystem.PluginObjects.a_in.endAcq;
+    BpodSystem.PluginObjects.a_in.stopReportingEvents;
+    BpodSystem.PluginObjects.a_in = []; % Manually release a_in object
 end
 
 

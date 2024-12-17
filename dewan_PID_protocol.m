@@ -139,10 +139,12 @@ function run_PID(~, ~, main_gui)
     end
 
 
+    BpodSystem.PluginObjects.a_in.scope_StartStop(); % Stop USB streaming + data logging
+
     SaveBpodSessionData;
 
     if BpodSystem.Status.Shutdown_flag == 1
-        soft_shutdown(main_gui)
+        soft_shutdown(main_gui) 
     else
         main_gui.unlock_gui();
         BpodSystem.Status.SafeClose = 1;

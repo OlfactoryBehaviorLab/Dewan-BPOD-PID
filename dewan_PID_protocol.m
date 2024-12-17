@@ -62,13 +62,13 @@ ModuleWrite('ValveModule1', ['B' 0])  % Reset valves to All Off incase it was po
 %stream_timer = timer('Name', 'Analog_Input_Poll', 'TimerFcn', {@(h,e)get_analog_data()}, 'ExecutionMode', 'fixedRate', 'Period', 0.05); % Stream analog in data
 %gui_timer = timer('Name', 'Update_GUI', 'TimerFcn', {@(h,e)update_gui(main_gui)}, 'ExecutionMode', 'fixedRate', 'Period', 0.3, 'BusyMode', 'queue'); % Async GUI update during trials
 
+behaviorDataFile = BpodSystem.Path.CurrentDataFile;
+BpodSystem.PluginObjects.a_in.USBStreamFile = [behaviorDataFile(1:end-4) '_Alg.mat']; % Set datafile for analog data captured in this session
+BpodSystem.PluginObjects.a_in.scope; % Launch Scope GUI
 
 %% Function DEFS below
 function run_PID(~, ~, main_gui)
-    behaviorDataFile = BpodSystem.Path.CurrentDataFile;
-    BpodSystem.PluginObjects.a_in.USBStreamFile = [behaviorDataFile(1:end-4) '_Alg.mat']; % Set datafile for analog data captured in this session
-    BpodSystem.PluginObjects.a_in.scope; % Launch Scope GUI
-    BpodSystem.PluginObjects.a_in.scope_StartStop % Start USB streaming + data logging
+    BpodSystem.PluginObjects.a_in.scope_StartStop(0.1) % Start USB streaming + data logging
 
     BpodSystem.Status.SafeClose = 0;
 

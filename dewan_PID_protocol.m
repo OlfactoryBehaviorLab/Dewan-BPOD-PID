@@ -160,6 +160,7 @@ function update_datafile(ExperimentParams)
     current_date = get_date;
     file_name = [odor_name '_' session_type '_' experimenter_name '_' current_date '.mat'];
     file_name = strjoin(file_name, '');
+    file_name = strrep(file_name, ' ', '');
     
     file_path = fullfile(BpodSystem.Path.DataFolder, session_type, file_name);
     BpodSystem.Path.CurrentDataFile = char(file_path);

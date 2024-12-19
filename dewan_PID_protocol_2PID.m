@@ -213,6 +213,8 @@ function sma = generate_state_machine(BpodSystem, Settings)
         baseline_duration = 2 - odor_preduration;
     end
 
+    FV_2_duration = 0.5;
+
 
     switch Settings.trial_type
         case 'Ortho' % 'Regular' PID Measurement
@@ -224,7 +226,8 @@ function sma = generate_state_machine(BpodSystem, Settings)
         case 'Retro' % 'Second' PID Measurement
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialDuration'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
             sma = AddState(sma, 'Name', 'PreTrialDuration', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 1}); % Open valve 7 & 8 (odor valve 1 & 2) and wait for equalization
-            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 10}); % Open FV (valve 1) for odor duration
+            sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'FV_2_Only'}, 'OutputActions', {'AnalogIn1', 2,'ValveModule1', 10}); % Open FV (valve 1) for odor duration
+            sma = AddState(sma, 'Name', 'FV_2_Only', 'Timer', FV_2_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'ValveModule1', 11}); % Open FV 2 (valve 3) for short time
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
     end
@@ -242,9 +245,10 @@ function load_valve_driver_commands()
     % 8. B9 = 00001001; Valve 4 ON | FV ON; ISB Trial
     % 9. B1 = 00000001; FV ON
     % 10. B197 = 11000101; Valve 7 & 8 ON (Odor Vial On)| FV ON; FV2 ON 
+    % 11. B4 = 00000100; FV2 ON
 
 
-    commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0], [66 8], [66 9], [66 1], [66 197]};
+    commands = {[66 192], [66 193], [66 240], [66 48], [66 49], [66 0], [66 8], [66 9], [66 1], [66 197], [66 4]};
 
     success = LoadSerialMessages('ValveModule1', commands); 
 

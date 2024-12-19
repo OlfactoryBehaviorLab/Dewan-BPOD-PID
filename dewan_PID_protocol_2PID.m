@@ -6,21 +6,37 @@ global BpodSystem;
 addpath(genpath('Helpers/'));
 
 %% If Bpod has not been loaded, load it
+
 if isempty(BpodSystem)
-    Bpod;
+    try
+        Bpod;
+    catch error
+        disp('Error initializing Bpod system!');
+        rethrow(error);
+    end
 end
 
-
-%% Reset a_in object if it is still being held by the Bpod
-if any([isprop(BpodSystem, 'PluginObjects'), isprop(BpodSystem.PluginObjects, 'a_in')])
-    BpodSystem.PluginObjects.a_in = [];
-end
-
+% %% Reset a_in object if it is still being held by the Bpod
+% if any([isprop(BpodSystem, 'PluginObjects'), isprop(BpodSystem.PluginObjects, 'a_in')])
+%     BpodSystem.PluginObjects.a_in = [];
+% end
 
 %% Load needed modules
-BpodSystem.PluginObjects.a_in = setup_analog_input('COM8'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
-load_valve_driver_commands();
-load_analog_in_commands();
+try
+    BpodSystem.PluginObjects.a_in = setup_analog_input('COM8'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
+    load_analog_in_commands();
+catch error
+    BpodSystem.PluginObjects.a_in = [];
+    evalin('base', 'EndBpod;');
+    rethrow(error);
+end
+
+try
+    load_valve_driver_commands();
+catch error
+    soft_shutdown([]);
+    rethrow(error);
+end
 
 
 % Framework of Data to save

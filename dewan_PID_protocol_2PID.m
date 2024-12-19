@@ -263,6 +263,7 @@ function release_ain()
     BpodSystem.PluginObjects.a_in.endAcq;
     BpodSystem.PluginObjects.a_in.stopReportingEvents;
     BpodSystem.PluginObjects.a_in = []; % Manually release a_in object
+    disp('Analog input module released!')
 end
 
 end

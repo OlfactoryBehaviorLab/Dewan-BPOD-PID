@@ -26,7 +26,8 @@ try
     BpodSystem.PluginObjects.a_in = setup_analog_input('COM8'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
     load_analog_in_commands();
 catch error
-    soft_shutdown([]);
+    BpodSystem.PluginObjects.a_in = [];
+    evalin('base', 'EndBpod;');
     rethrow(error);
 end
 

@@ -302,7 +302,7 @@ function helper_paths = gen_helper_paths()
     file = matlab.desktop.editor.getActiveFilename;
     file_path_parts = split(file, '\');
     file_path_dir = join(file_path_parts(1:end-1), '\');
-    helper_dir = [file_path_dir, '\', 'Helpers'];
+    helper_dir = [file_path_dir{1}, '\', 'Helpers'];
     helper_paths = genpath(helper_dir);
 end
 

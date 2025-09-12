@@ -3,7 +3,7 @@ function dewan_PID_protocol
 global BpodSystem;
 
 %% Make sure all our helper scripts are loaded
-addpath(genpath('Helpers/'));
+addpath(gen_helper_paths());
 
 %% If Bpod has not been loaded, load it
 if isempty(BpodSystem)
@@ -296,6 +296,14 @@ function release_ain()
     BpodSystem.PluginObjects.a_in.endAcq;
     BpodSystem.PluginObjects.a_in.stopReportingEvents;
     BpodSystem.PluginObjects.a_in = []; % Manually release a_in object
+end
+
+function helper_paths = gen_helper_paths()
+    file = matlab.desktop.editor.getActiveFilename;
+    file_path_parts = split(file, '\');
+    file_path_dir = join(file_path_parts(1:end-1), '\');
+    helper_dir = [file_path_dir, '\', 'Helpers'];
+    helper_paths = genpath(helper_dir);
 end
 
 end

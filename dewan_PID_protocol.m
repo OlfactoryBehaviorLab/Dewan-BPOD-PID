@@ -191,7 +191,7 @@ function sma = generate_state_machine(BpodSystem, Settings)
 
     odor_preduration = Settings.odor_preduration / 1000; % Convert ms to s otherwise you'll be waiting a LONG timezzz
     odor_duration = Settings.odor_duration / 1000;
-    solvent_duration = Settings.solvent_duration;
+    solvent_duration = Settings.solvent_duration / 1000; 
     ITI_duration = Settings.ITIms / 1000;
 
 

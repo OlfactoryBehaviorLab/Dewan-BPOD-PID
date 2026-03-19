@@ -224,7 +224,7 @@ function sma = generate_state_machine(BpodSystem, Settings)
             sma = AddState(sma, 'Name', 'PreTrialSolvent', 'Timer', solvent_duration_preodor, 'StateChangeConditions', {'Tup', 'PreTrialOdor'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 4}); % Turn on valve 5 & 6 (solvent valve 1 & 2) for solvent measurement
             sma = AddState(sma, 'Name', 'PreTrialOdor', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 4, 'ValveModule1', 3}); % Turn on valve 7 & 8 (odor valve 1 & 2) so odor can equalize; leave solvent valves on
             sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'OdorOff'}, 'OutputActions', {'AnalogIn1', 2, 'ValveModule1', 2}); % Open FV (valve 1) for odor duration; turn off valve 5 & 6
-            sma = AddState(sma, 'Name', 'OdorOff', 'Timer', solvent_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 5, 'ValveModule1', 4}); % Closes odor vial and actuates FV; turn on valve 5 & 6;  allows solvent to PID 
+            sma = AddState(sma, 'Name', 'OdorOff', 'Timer', solvent_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 8, 'ValveModule1', 4}); % Closes odor vial and actuates FV; turn on valve 5 & 6;  allows solvent to PID 
             sma = AddState(sma, 'Name', 'All_Off', 'Timer', 0, 'StateChangeConditions', {'Tup', 'ITI'}, 'OutputActions', {'AnalogIn1', 3, 'ValveModule1', 6}); % Close everything
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
         case 'Calibration'
@@ -280,11 +280,12 @@ function load_analog_in_commands()
     %   2. F: FV Actuation (Odor Duration) (Decimal 70)
     %   3. E: Trial End (Close everything) (Decimal 69)
     %   4. P: Solvent odor pretrial duration (Decimal 80)
-    %   5. C: FV Close for second solvent duration (Decimal 67)
+    %   5. C: Baseline Start/FV Close for second solvent duration (Decimal 67)
     %   6. I: ITI Start (Decimal 73)
     %   7. K: Kinetic Trial No FV (Decimal 75)
+    %   8. B: Solvent 2/Post Odor (Decimal 66)
 
-    commands = {['#' 'S'], ['#' 'F'], ['#' 'E'], ['#' 'P'], ['#' 'C'], ['#', 'I'], ['#', 'K']};
+    commands = {['#' 'S'], ['#' 'F'], ['#' 'E'], ['#' 'P'], ['#' 'C'], ['#', 'I'], ['#', 'K'], ['#', 'B']};
 
     success = LoadSerialMessages('AnalogIn1', commands);
 

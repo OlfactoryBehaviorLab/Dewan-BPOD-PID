@@ -18,7 +18,7 @@ end
 
 
 %% Load needed modules
-BpodSystem.PluginObjects.a_in = setup_analog_input('COM8'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
+BpodSystem.PluginObjects.a_in = setup_analog_input('COM4'); % Just going to keep the analog in module inside the Bpod object to allow proper destructor function
 load_valve_driver_commands();
 load_analog_in_commands();
 
@@ -191,9 +191,13 @@ function sma = generate_state_machine(BpodSystem, Settings)
 
     odor_preduration = Settings.odor_preduration / 1000; % Convert ms to s otherwise you'll be waiting a LONG timezzz
     odor_duration = Settings.odor_duration / 1000;
-    solvent_duration = Settings.solvent_duration;
+    solvent_duration = Settings.solvent_duration / 1000;
     ITI_duration = Settings.ITIms / 1000;
-
+    solvent_duration_preodor = solvent_duration - odor_preduration;
+    if solvent_duration_preodor < 0
+        solvent_duration_preodor = 0;
+    end
+    
 
     if odor_preduration >= 2
         baseline_duration = 0;
@@ -217,7 +221,7 @@ function sma = generate_state_machine(BpodSystem, Settings)
             sma = AddState(sma, 'Name', 'ITI', 'Timer', ITI_duration, 'StateChangeConditions', {'Tup', '>exit'}, 'OutputActions', {'AnalogIn1', 6});
         case 'Solvent'
             sma = AddState(sma, 'Name', 'Baseline', 'Timer', baseline_duration , 'StateChangeConditions', {'Tup', 'PreTrialSolvent'}, 'OutputActions', {'AnalogIn1', 5}); % Baseline period is the difference between 2s and preodor duration
-            sma = AddState(sma, 'Name', 'PreTrialSolvent', 'Timer', solvent_duration, 'StateChangeConditions', {'Tup', 'PreTrialOdor'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 4}); % Turn on valve 5 & 6 (solvent valve 1 & 2) for solvent measurement
+            sma = AddState(sma, 'Name', 'PreTrialSolvent', 'Timer', solvent_duration_preodor, 'StateChangeConditions', {'Tup', 'PreTrialOdor'}, 'OutputActions', {'AnalogIn1', 1, 'ValveModule1', 4}); % Turn on valve 5 & 6 (solvent valve 1 & 2) for solvent measurement
             sma = AddState(sma, 'Name', 'PreTrialOdor', 'Timer', odor_preduration, 'StateChangeConditions', {'Tup', 'PID_Measurement'}, 'OutputActions', {'AnalogIn1', 4, 'ValveModule1', 3}); % Turn on valve 7 & 8 (odor valve 1 & 2) so odor can equalize; leave solvent valves on
             sma = AddState(sma, 'Name', 'PID_Measurement', 'Timer', odor_duration, 'StateChangeConditions', {'Tup', 'OdorOff'}, 'OutputActions', {'AnalogIn1', 2, 'ValveModule1', 2}); % Open FV (valve 1) for odor duration; turn off valve 5 & 6
             sma = AddState(sma, 'Name', 'OdorOff', 'Timer', solvent_duration, 'StateChangeConditions', {'Tup', 'All_Off'}, 'OutputActions', {'AnalogIn1', 5, 'ValveModule1', 4}); % Closes odor vial and actuates FV; turn on valve 5 & 6;  allows solvent to PID 
